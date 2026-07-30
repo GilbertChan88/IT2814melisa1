@@ -1,56 +1,101 @@
-﻿@page
+@page
 @model ArcaneVault_Web.Pages.CatalogItems.IndexModel
 
 @{
     ViewData["Title"] = "Manage Items";
 }
 
-<h2>Manage Items</h2>
+<div class="page-header">
+    <h2>Manage Catalog Items</h2>
+    <a asp-page="Create" class="btn btn-accent">+ Create New Item</a>
+</div>
 
-<p>
-    <a asp-page="Create" class="btn btn-success">
-        Create New Item
-    </a>
-</p>
+<!-- Stats -->
+<div class="stats-bar">
+    <div class="stat-card">
+        <div class="stat-number">@Model.CatalogItemList.Count</div>
+        <div class="stat-label">Total Items</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">@Model.CatalogItemList.Select(x => x.CategoryName ?? "Other").Distinct().Count()</div>
+        <div class="stat-label">Categories</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">@Model.CatalogItemList.Count(x => !x.IsDeleted)</div>
+        <div class="stat-label">Active</div>
+    </div>
+</div>
 
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>Item ID</th>
-            <th>Item Name</th>
-            <th>Category</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-
-    <tbody>
-        @foreach (var item in Model.CatalogItemList)
-        {
-            <tr>
-                <td>@item.CatalogItemId</td>
-                <td>@item.ItemName</td>
-                <td>@item.CategoryName</td>
-
-                <td>
-                    <a asp-page="Details"
-                       asp-route-id="@item.CatalogItemId"
-                       class="btn btn-info">
-                        Details
-                    </a>
-
-                    <a asp-page="Edit"
-                       asp-route-id="@item.CatalogItemId"
-                       class="btn btn-warning">
-                        Edit
-                    </a>
-
-                    <a asp-page="Delete"
-                       asp-route-id="@item.CatalogItemId"
-                       class="btn btn-danger">
-                        Delete
-                    </a>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+@if (Model.CatalogItemList.Count == 0)
+{
+    <div class="alert-info" style="padding: 32px; text-align: center; border-radius: var(--radius-md);">
+        <div style="font-size: 2rem; margin-bottom: 12px;">&#x1F4CB;</div>
+        <strong>No catalog items yet</strong>
+        <p style="color: var(--text-muted); margin-top: 8px; margin-bottom: 16px;">
+            Create your first catalog item to get started.
+        </p>
+        <a asp-page="Create" class="btn btn-primary">Create Item</a>
+    </div>
+}
+else
+{
+    <div style="overflow-x: auto; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+        <table class="table-dark-custom">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Item Name</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.CatalogItemList)
+                {
+                    <tr>
+                        <td style="color: var(--text-muted);">#@item.CatalogItemId</td>
+                        <td style="font-weight: 600;">@item.ItemName</td>
+                        <td>
+                            <span class="category-pill" style="padding: 4px 12px; font-size: 0.75rem;">
+                                @(item.CategoryName ?? item.CategoryCode)
+                            </span>
+                        </td>
+                        <td>
+                            @if (item.IsDeleted)
+                            {
+                                <span style="color: var(--danger); font-size: 0.8rem; font-weight: 600;">Deleted</span>
+                            }
+                            else
+                            {
+                                <span style="color: var(--success); font-size: 0.8rem; font-weight: 600;">Active</span>
+                            }
+                        </td>
+                        <td style="text-align: right;">
+                            <div style="display: inline-flex; gap: 6px;">
+                                <a asp-page="Details"
+                                   asp-route-id="@item.CatalogItemId"
+                                   class="btn btn-info btn-sm"
+                                   style="font-size: 0.75rem; padding: 5px 10px;">
+                                    Details
+                                </a>
+                                <a asp-page="Edit"
+                                   asp-route-id="@item.CatalogItemId"
+                                   class="btn btn-warning btn-sm"
+                                   style="font-size: 0.75rem; padding: 5px 10px;">
+                                    Edit
+                                </a>
+                                <a asp-page="Delete"
+                                   asp-route-id="@item.CatalogItemId"
+                                   class="btn btn-danger btn-sm"
+                                   style="font-size: 0.75rem; padding: 5px 10px;">
+                                    Delete
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

@@ -1,33 +1,64 @@
-﻿@page
+@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Home";
 }
 
+<!-- Hero Section -->
 <section class="hero">
     <div class="hero-content">
         @if (!string.IsNullOrEmpty(Model.UserName))
         {
-            <h1>Welcome back, @Model.UserName</h1>
+            <h1>Welcome back, @Model.UserName!</h1>
+            <p>Check out the latest additions to our vault.</p>
         }
         else
         {
             <h1>Discover Rare Collectibles</h1>
+            <p>Action figures, trading cards, statues, and pop culture memorabilia — all in stock and ready to ship.</p>
         }
-        <p class="text-muted-small">Explore curated cards, comics, and memorabilia from collectors worldwide.</p>
         <p class="hero-cta">
             <a class="btn btn-primary btn-lg me-2" asp-page="/CollectionItems/Available">Shop Now</a>
             <a class="btn btn-outline-secondary btn-lg" asp-page="/CatalogItems/Index">Sell with Us</a>
         </p>
     </div>
-    <div class="hero-media">
-        <div class="placeholder-img">Hero image</div>
+    <div class="hero-media d-none d-lg-block">
+        <div class="placeholder-img">&#127922; Collectibles</div>
     </div>
 </section>
 
-<section class="mt-4">
-    <h3>Featured Items</h3>
-    <div class="product-grid mt-3">
+<!-- Trust Badges -->
+<section class="trust-badges">
+    <div class="trust-badge">
+        <div class="badge-icon">&#x1F4E6;</div>
+        <div class="badge-title">In-Stock &amp; Ready</div>
+        <div class="badge-desc">Every item ships within 1-3 business days</div>
+    </div>
+    <div class="trust-badge">
+        <div class="badge-icon">&#x2705;</div>
+        <div class="badge-title">100% Authentic</div>
+        <div class="badge-desc">Licensed, sealed, and brand new</div>
+    </div>
+    <div class="trust-badge">
+        <div class="badge-icon">&#x1F6E1;&#xFE0F;</div>
+        <div class="badge-title">Careful Packaging</div>
+        <div class="badge-desc">Collector-grade protection on every order</div>
+    </div>
+    <div class="trust-badge">
+        <div class="badge-icon">&#x2B50;</div>
+        <div class="badge-title">Trusted by Collectors</div>
+        <div class="badge-desc">Thousands of happy customers worldwide</div>
+    </div>
+</section>
+
+<!-- Featured Items -->
+<section class="mt-section">
+    <div class="section-heading">
+        <h3>Featured Items</h3>
+        <a class="view-all" asp-page="/CollectionItems/Available">View All &rarr;</a>
+    </div>
+
+    <div class="product-grid">
         @if (Model.FeaturedItems != null && Model.FeaturedItems.Any())
         {
             foreach (var item in Model.FeaturedItems)
@@ -37,17 +68,43 @@
                     : item.ImageUrl;
 
                 <div class="product-card">
+                    <div class="badge-stock">In Stock</div>
                     <img src="@src" alt="@item.ItemName" />
                     <div class="card-body">
                         <div class="title">@item.ItemName</div>
-                        <div class="meta">@item.CategoryName ?? item.CategoryCode</div>
+                        <div class="meta">@(item.CategoryName ?? item.CategoryCode)</div>
+                        <a asp-page="/CollectionItems/Add"
+                           asp-route-id="@item.CatalogItemId"
+                           class="btn-add">+ Add to Collection</a>
                     </div>
                 </div>
             }
         }
         else
         {
-            <div class="text-muted">No featured items available right now.</div>
+            <div style="grid-column: 1 / -1;">
+                <div class="alert-info" style="padding: 24px; text-align: center;">
+                    No featured items available right now. Check back soon!
+                </div>
+            </div>
         }
+    </div>
+</section>
+
+<!-- Category Shortcuts -->
+<section class="mt-section mb-section">
+    <div class="section-heading">
+        <h3>Browse by Category</h3>
+        <a class="view-all" asp-page="/Categories/Index">All Categories &rarr;</a>
+    </div>
+    <div class="category-pills">
+        <a class="category-pill" asp-page="/CollectionItems/Available">Action Figures</a>
+        <a class="category-pill" asp-page="/CollectionItems/Available">Trading Cards</a>
+        <a class="category-pill" asp-page="/CollectionItems/Available">Statues</a>
+        <a class="category-pill" asp-page="/CollectionItems/Available">Comics</a>
+        <a class="category-pill" asp-page="/CollectionItems/Available">Vinyl Figures</a>
+        <a class="category-pill" asp-page="/CollectionItems/Available">Enamel Pins</a>
+        <a class="category-pill" asp-page="/CollectionItems/Available">Board Games</a>
+        <a class="category-pill" asp-page="/CollectionItems/Available">Plush</a>
     </div>
 </section>
