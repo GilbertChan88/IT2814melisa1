@@ -29,6 +29,11 @@ namespace ArcaneVault_WebAPI.Controllers
                 join category in _context.Categories
                     on itemCategory.CategoryCode equals category.CategoryCode
 
+                join catalogItem in _context.CatalogItems
+                    on item.CatalogItemId equals catalogItem.CatalogItemId
+                    into catalogJoin
+                from catalog in catalogJoin.DefaultIfEmpty()
+
                 where item.UserName == username
                     && !item.IsDeleted
 
@@ -44,7 +49,8 @@ namespace ArcaneVault_WebAPI.Controllers
                     item.UserName,
                     item.IsDeleted,
                     category.CategoryCode,
-                    category.CategoryName
+                    category.CategoryName,
+                    ImageUrl = catalog != null ? catalog.ImageUrl : null
                 };
 
             return Ok(await collectionItems.ToListAsync());

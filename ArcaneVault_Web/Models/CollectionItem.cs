@@ -28,5 +28,8 @@ namespace ArcaneVault_Web.Models
         public string? CategoryCode { get; set; }
 
         public string? CategoryName { get; set; }
+
+        // Image URL from linked CatalogItem
+        public string? ImageUrl { get; set; }
     }
 }
