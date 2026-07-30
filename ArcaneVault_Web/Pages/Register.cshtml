@@ -1,0 +1,48 @@
+﻿@page
+@model ArcaneVault_Web.Pages.RegisterModel
+
+<h2>Register</h2>
+
+<div asp-validation-summary="All" class="text-danger"></div>
+
+<form method="post">
+
+    <div class="mb-3">
+        <label asp-for="User.UserName"></label>
+        <input asp-for="User.UserName" class="form-control" />
+        <span asp-validation-for="User.UserName" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="User.Email"></label>
+        <input asp-for="User.Email" class="form-control" />
+        <span asp-validation-for="User.Email" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="User.Password"></label>
+        <input asp-for="User.Password" class="form-control" />
+        <span asp-validation-for="User.Password" class="text-danger"></span>
+    </div>
+    <div class="form-text">
+        Password must be exactly 12 characters and contain at least
+        one of these special characters: @@ $ ! % * ? &
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="User.ConfirmPassword" class="form-label"></label>
+        <input asp-for="User.ConfirmPassword" class="form-control" />
+        <span asp-validation-for="User.ConfirmPassword"
+              class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+        Register
+    </button>
+
+</form>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

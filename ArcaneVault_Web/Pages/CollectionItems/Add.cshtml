@@ -1,0 +1,56 @@
+﻿@page "{id:int}"
+@model ArcaneVault_Web.Pages.CollectionItems.AddModel
+
+@{
+    ViewData["Title"] = "Add to Collection";
+}
+
+<h2>Add to Collection</h2>
+
+<table class="table table-bordered">
+    <tr>
+        <th>Item Name</th>
+        <td>@Model.CatalogItem?.ItemName</td>
+    </tr>
+
+    <tr>
+        <th>Category</th>
+        <td>@Model.CatalogItem?.CategoryName</td>
+    </tr>
+</table>
+
+<form method="post">
+
+    <div asp-validation-summary="ModelOnly"
+         class="text-danger"></div>
+
+    <input asp-for="AddItem.CatalogItemId"
+           type="hidden" />
+
+    <div class="mb-3">
+        <label asp-for="AddItem.Quantity"
+               class="form-label"></label>
+
+        <input asp-for="AddItem.Quantity"
+               class="form-control" />
+
+        <span asp-validation-for="AddItem.Quantity"
+              class="text-danger"></span>
+    </div>
+
+    <button type="submit"
+            class="btn btn-success">
+        Add to Collection
+    </button>
+
+    <a asp-page="Available"
+       class="btn btn-secondary">
+        Cancel
+    </a>
+
+</form>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,35 @@
+﻿@page "{id:int}"
+@model ArcaneVault_Web.Pages.CatalogItems.DetailsModel
+
+@{
+    ViewData["Title"] = "Item Details";
+}
+
+<h2>Item Details</h2>
+
+<table class="table table-bordered">
+    <tr>
+        <th>Item ID</th>
+        <td>@Model.CatalogItem?.CatalogItemId</td>
+    </tr>
+
+    <tr>
+        <th>Item Name</th>
+        <td>@Model.CatalogItem?.ItemName</td>
+    </tr>
+
+    <tr>
+        <th>Category</th>
+        <td>@Model.CatalogItem?.CategoryName</td>
+    </tr>
+</table>
+
+<a asp-page="Edit"
+   asp-route-id="@Model.CatalogItem?.CatalogItemId"
+   class="btn btn-warning">
+    Edit
+</a>
+
+<a asp-page="Index" class="btn btn-secondary">
+    Back
+</a>

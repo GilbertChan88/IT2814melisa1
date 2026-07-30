@@ -1,0 +1,95 @@
+﻿@page
+@model ArcaneVault_Web.Pages.CollectionItems.IndexModel
+
+@{
+    ViewData["Title"] = "My Collection";
+}
+
+<h2>My Collection</h2>
+
+<p>
+    <a asp-page="Available"
+       class="btn btn-success">
+        Add Item to Collection
+    </a>
+</p>
+
+<form method="get" class="mb-3">
+    <div class="input-group">
+        <input asp-for="SearchString"
+               class="form-control"
+               placeholder="Search by item name, category or quantity..." />
+
+        <button type="submit"
+                class="btn btn-primary">
+            Search
+        </button>
+
+        <a asp-page="Index"
+           class="btn btn-secondary">
+            Clear
+        </a>
+    </div>
+</form>
+
+@if (Model.CollectionItemList == null ||
+     Model.CollectionItemList.Count == 0)
+{
+    <div class="alert alert-info">
+        You do not have any items in your collection yet.
+    </div>
+}
+else
+{
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Item ID</th>
+                <th>Item Name</th>
+                <th>Category</th>
+                <th>Starting Quantity</th>
+                <th>Current Quantity</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var item in Model.CollectionItemList)
+            {
+                <tr>
+                    <td>@item.ItemId</td>
+
+                    <td>@item.ItemName</td>
+
+                    <td>
+                        @(item.CategoryName ?? "Not assigned")
+                    </td>
+
+                    <td>@item.StartingQuantity</td>
+
+                    <td>@item.CurrentQuantity</td>
+
+                    <td>
+                        <a asp-page="Details"
+                           asp-route-id="@item.ItemId"
+                           class="btn btn-info">
+                            Details
+                        </a>
+
+                        <a asp-page="Edit"
+                           asp-route-id="@item.ItemId"
+                           class="btn btn-warning">
+                            Edit Quantity
+                        </a>
+
+                        <a asp-page="Delete"
+                           asp-route-id="@item.ItemId"
+                           class="btn btn-danger">
+                            Remove
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

@@ -1,0 +1,39 @@
+﻿@page
+@model ArcaneVault_Web.Pages.LoginModel
+
+<h2>Login</h2>
+
+<form method="post">
+
+    <div asp-validation-summary="ModelOnly"
+         class="text-danger"></div>
+
+    <div class="mb-3">
+        <label asp-for="Login.UserName"></label>
+        <input asp-for="Login.UserName" class="form-control" />
+        <span asp-validation-for="Login.UserName" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Login.Email"></label>
+        <input asp-for="Login.Email" class="form-control" />
+        <span asp-validation-for="Login.Email" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Login.Password"></label>
+        <input asp-for="Login.Password" class="form-control" />
+        <span asp-validation-for="Login.Password"
+              class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+        Login
+    </button>
+
+</form>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

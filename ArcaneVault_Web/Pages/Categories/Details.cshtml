@@ -1,0 +1,25 @@
+﻿@page "{id}"
+@model ArcaneVault_Web.Pages.Categories.DetailsModel
+
+<h2>Category Details</h2>
+
+<div>
+    <dl class="row">
+        <dt class="col-sm-2">Category Code</dt>
+        <dd class="col-sm-10">@Model.Category.CategoryCode</dd>
+
+        <dt class="col-sm-2">Category Name</dt>
+        <dd class="col-sm-10">@Model.Category.CategoryName</dd>
+    </dl>
+</div>
+
+<a asp-page="Edit"
+   asp-route-id="@Model.Category.CategoryCode"
+   class="btn btn-warning">
+    Edit
+</a>
+
+<a asp-page="Index"
+   class="btn btn-secondary">
+    Back
+</a>

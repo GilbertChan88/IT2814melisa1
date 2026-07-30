@@ -1,0 +1,54 @@
+﻿@page "{id:int}"
+@model ArcaneVault_Web.Pages.CollectionItems.DetailsModel
+
+@{
+    ViewData["Title"] = "Collection Item Details";
+}
+
+<h2>Collection Item Details</h2>
+
+@if (Model.CollectionItem != null)
+{
+    <dl class="row">
+
+        <dt class="col-sm-3">
+            Item Name
+        </dt>
+        <dd class="col-sm-9">
+            @Model.CollectionItem.ItemName
+        </dd>
+
+        <dt class="col-sm-3">
+            Category
+        </dt>
+        <dd class="col-sm-9">
+            @(Model.CollectionItem.CategoryName ?? "Not assigned")
+        </dd>
+
+        <dt class="col-sm-3">
+            Starting Quantity
+        </dt>
+        <dd class="col-sm-9">
+            @Model.CollectionItem.StartingQuantity
+        </dd>
+
+        <dt class="col-sm-3">
+            Current Quantity
+        </dt>
+        <dd class="col-sm-9">
+            @Model.CollectionItem.CurrentQuantity
+        </dd>
+
+    </dl>
+
+    <a asp-page="Edit"
+       asp-route-id="@Model.CollectionItem.ItemId"
+       class="btn btn-warning">
+        Edit Quantity
+    </a>
+
+    <a asp-page="Index"
+       class="btn btn-secondary">
+        Back to My Collection
+    </a>
+}

@@ -1,0 +1,53 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<section class="hero">
+    <div class="hero-content">
+        @if (!string.IsNullOrEmpty(Model.UserName))
+        {
+            <h1>Welcome back, @Model.UserName</h1>
+        }
+        else
+        {
+            <h1>Discover Rare Collectibles</h1>
+        }
+        <p class="text-muted-small">Explore curated cards, comics, and memorabilia from collectors worldwide.</p>
+        <p class="hero-cta">
+            <a class="btn btn-primary btn-lg me-2" asp-page="/CollectionItems/Available">Shop Now</a>
+            <a class="btn btn-outline-secondary btn-lg" asp-page="/CatalogItems/Index">Sell with Us</a>
+        </p>
+    </div>
+    <div class="hero-media">
+        <div class="placeholder-img">Hero image</div>
+    </div>
+</section>
+
+<section class="mt-4">
+    <h3>Featured Items</h3>
+    <div class="product-grid mt-3">
+        @if (Model.FeaturedItems != null && Model.FeaturedItems.Any())
+        {
+            foreach (var item in Model.FeaturedItems)
+            {
+                var src = string.IsNullOrWhiteSpace(item.ImageUrl)
+                    ? Url.Content("~/images/product-placeholder.png")
+                    : item.ImageUrl;
+
+                <div class="product-card">
+                    <img src="@src" alt="@item.ItemName" />
+                    <div class="card-body">
+                        <div class="title">@item.ItemName</div>
+                        <div class="meta">@item.CategoryName ?? item.CategoryCode</div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="text-muted">No featured items available right now.</div>
+        }
+    </div>
+</section>

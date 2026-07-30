@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="ArcaneVault_Web/ArcaneVault_Web.csproj" />
+  <Project Path="ArcaneVault_WebAPI/ArcaneVault_WebAPI.csproj" />
+</Solution>

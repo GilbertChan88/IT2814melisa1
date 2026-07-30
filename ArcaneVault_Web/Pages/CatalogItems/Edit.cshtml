@@ -1,0 +1,72 @@
+﻿@page "{id:int}"
+@model ArcaneVault_Web.Pages.CatalogItems.EditModel
+
+@{
+    ViewData["Title"] = "Edit Item";
+}
+
+<h2>Edit Catalogue Item</h2>
+
+<form method="post" enctype="multipart/form-data">
+
+    <div asp-validation-summary="ModelOnly"
+         class="text-danger"></div>
+
+    <input asp-for="CatalogItem.CatalogItemId"
+           type="hidden" />
+
+    <div class="mb-3">
+        <label asp-for="CatalogItem.ItemName"
+               class="form-label"></label>
+
+        <input asp-for="CatalogItem.ItemName"
+               class="form-control" />
+
+        <span asp-validation-for="CatalogItem.ItemName"
+              class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Image</label>
+        <input asp-for="ImageFile" type="file" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="CatalogItem.CategoryCode"
+               class="form-label">
+            Category
+        </label>
+
+        <select asp-for="CatalogItem.CategoryCode"
+                class="form-select">
+
+            <option value="">
+                -- Select Category --
+            </option>
+
+            @foreach (var category in Model.CategoryList)
+            {
+                <option value="@category.CategoryCode">
+                    @category.CategoryName
+                </option>
+            }
+        </select>
+
+        <span asp-validation-for="CatalogItem.CategoryCode"
+              class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+        Save
+    </button>
+
+    <a asp-page="Index" class="btn btn-secondary">
+        Cancel
+    </a>
+
+</form>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

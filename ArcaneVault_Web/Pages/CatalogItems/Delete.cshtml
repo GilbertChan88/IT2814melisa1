@@ -1,0 +1,42 @@
+﻿@page "{id:int}"
+@model ArcaneVault_Web.Pages.CatalogItems.DeleteModel
+
+@{
+    ViewData["Title"] = "Delete Item";
+}
+
+<h2>Delete Catalogue Item</h2>
+
+<div asp-validation-summary="ModelOnly"
+     class="text-danger"></div>
+
+<p>
+    Are you sure you want to remove this item from the catalogue?
+</p>
+
+<table class="table table-bordered">
+    <tr>
+        <th>Item Name</th>
+        <td>@Model.CatalogItem.ItemName</td>
+    </tr>
+
+    <tr>
+        <th>Category</th>
+        <td>@Model.CatalogItem.CategoryName</td>
+    </tr>
+</table>
+
+<form method="post">
+
+    <input asp-for="CatalogItem.CatalogItemId"
+           type="hidden" />
+
+    <button type="submit" class="btn btn-danger">
+        Delete
+    </button>
+
+    <a asp-page="Index" class="btn btn-secondary">
+        Cancel
+    </a>
+
+</form>
