@@ -32,8 +32,17 @@ namespace ArcaneVault_Web.Pages.CatalogItems
                 return RedirectToPage("/Index");
             }
 
-            CategoryList =
-                await CategoryDAL.GetCategories();
+            try
+            {
+                CategoryList = await CategoryDAL.GetCategories()
+                    ?? new List<Category>();
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError(string.Empty,
+                    "Unable to load categories: " + ex.Message);
+                CategoryList = new List<Category>();
+            }
 
             return Page();
         }
@@ -47,35 +56,70 @@ namespace ArcaneVault_Web.Pages.CatalogItems
 
             if (!ModelState.IsValid)
             {
-                CategoryList =
-                    await CategoryDAL.GetCategories();
-
-                return Page();
-            }
-
-            // create item using typed client
-            var created = await _apiClient.CreateCatalogItem(CatalogItem);
-
-            if (created == null)
-            {
-                ModelState.AddModelError("", "Failed to create catalog item.");
-                CategoryList = await CategoryDAL.GetCategories();
-                return Page();
-            }
-
-            // upload image if provided
-            if (ImageFile != null && ImageFile.Length > 0)
-            {
-                using var stream = ImageFile.OpenReadStream();
-                var imageUrl = await _apiClient.UploadImageAsync(created.CatalogItemId, stream, ImageFile.FileName, ImageFile.ContentType);
-                if (imageUrl == null)
+                try
                 {
-                    ModelState.AddModelError("", "Image upload failed.");
-                    CategoryList = await CategoryDAL.GetCategories();
+                    CategoryList = await CategoryDAL.GetCategories()
+                        ?? new List<Category>();
+                }
+                catch
+                {
+                    CategoryList = new List<Category>();
+                }
+
+                return Page();
+            }
+
+            try
+            {
+                // create item using typed client
+                var created = await _apiClient.CreateCatalogItem(CatalogItem);
+
+                if (created == null)
+                {
+                    ModelState.AddModelError("", "Failed to create catalog item. The server may be unavailable.");
+                    try
+                    {
+                        CategoryList = await CategoryDAL.GetCategories()
+                            ?? new List<Category>();
+                    }
+                    catch
+                    {
+                        CategoryList = new List<Category>();
+                    }
                     return Page();
                 }
 
-                created.ImageUrl = imageUrl;
+                // upload image if provided
+                if (ImageFile != null && ImageFile.Length > 0)
+                {
+                    using var stream = ImageFile.OpenReadStream();
+                    var imageUrl = await _apiClient.UploadImageAsync(
+                        created.CatalogItemId, stream,
+                        ImageFile.FileName, ImageFile.ContentType);
+                    if (imageUrl == null)
+                    {
+                        // Item was created but image upload failed - still redirect
+                        // but could show a warning
+                    }
+                    else
+                    {
+                        created.ImageUrl = imageUrl;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "Error creating item: " + ex.Message);
+                try
+                {
+                    CategoryList = await CategoryDAL.GetCategories()
+                        ?? new List<Category>();
+                }
+                catch
+                {
+                    CategoryList = new List<Category>();
+                }
+                return Page();
             }
 
             return RedirectToPage("Index");

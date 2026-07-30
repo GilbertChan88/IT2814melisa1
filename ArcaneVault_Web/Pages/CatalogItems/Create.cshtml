@@ -1,67 +1,80 @@
-﻿@page
+@page
 @model ArcaneVault_Web.Pages.CatalogItems.CreateModel
 
 @{
     ViewData["Title"] = "Create Item";
 }
 
-<h2>Create Catalogue Item</h2>
+<div class="page-header">
+    <h2>Create Catalogue Item</h2>
+    <a asp-page="Index" class="btn btn-outline-secondary">Back to List</a>
+</div>
 
-<form method="post" enctype="multipart/form-data">
+<div style="max-width: 600px;">
+    <form method="post" enctype="multipart/form-data">
 
-    <div asp-validation-summary="ModelOnly"
-         class="text-danger"></div>
+        <div asp-validation-summary="ModelOnly"
+             class="text-danger" style="margin-bottom: 16px;"></div>
 
-    <div class="mb-3">
-        <label asp-for="CatalogItem.ItemName"
-               class="form-label"></label>
+        <div class="mb-3">
+            <label asp-for="CatalogItem.ItemName"
+                   class="form-label">Item Name</label>
 
-        <input asp-for="CatalogItem.ItemName"
-               class="form-control" />
+            <input asp-for="CatalogItem.ItemName"
+                   class="form-control"
+                   placeholder="Enter item name..." />
 
-        <span asp-validation-for="CatalogItem.ItemName"
-              class="text-danger"></span>
-    </div>
+            <span asp-validation-for="CatalogItem.ItemName"
+                  class="text-danger"></span>
+        </div>
 
-    <div class="mb-3">
-        <label class="form-label">Image</label>
-        <input asp-for="ImageFile" type="file" class="form-control" />
-    </div>
+        <div class="mb-3">
+            <label asp-for="CatalogItem.CategoryCode"
+                   class="form-label">Category</label>
 
-    <div class="mb-3">
-        <label asp-for="CatalogItem.CategoryCode"
-               class="form-label">
-            Category
-        </label>
-
-        <select asp-for="CatalogItem.CategoryCode"
-                class="form-select">
-
-            <option value="">
-                -- Select Category --
-            </option>
-
-            @foreach (var category in Model.CategoryList)
+            @if (Model.CategoryList.Count == 0)
             {
-                <option value="@category.CategoryCode">
-                    @category.CategoryName
-                </option>
+                <div class="alert-info" style="padding: 12px; border-radius: var(--radius-sm); font-size: 0.85rem;">
+                    No categories available. Please create a category first or check the API connection.
+                </div>
             }
-        </select>
+            else
+            {
+                <select asp-for="CatalogItem.CategoryCode"
+                        class="form-select">
 
-        <span asp-validation-for="CatalogItem.CategoryCode"
-              class="text-danger"></span>
-    </div>
+                    <option value="">-- Select Category --</option>
 
-    <button type="submit" class="btn btn-primary">
-        Create
-    </button>
+                    @foreach (var category in Model.CategoryList)
+                    {
+                        <option value="@category.CategoryCode">
+                            @category.CategoryName
+                        </option>
+                    }
+                </select>
+            }
 
-    <a asp-page="Index" class="btn btn-secondary">
-        Cancel
-    </a>
+            <span asp-validation-for="CatalogItem.CategoryCode"
+                  class="text-danger"></span>
+        </div>
 
-</form>
+        <div class="mb-4">
+            <label class="form-label">Image (optional)</label>
+            <input asp-for="ImageFile" type="file" class="form-control"
+                   accept="image/*" />
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <button type="submit" class="btn btn-accent">
+                Create Item
+            </button>
+            <a asp-page="Index" class="btn btn-outline-secondary">
+                Cancel
+            </a>
+        </div>
+
+    </form>
+</div>
 
 @section Scripts
 {
