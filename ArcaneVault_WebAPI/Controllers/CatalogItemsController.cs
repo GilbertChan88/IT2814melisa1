@@ -12,12 +12,6 @@ namespace ArcaneVault_WebAPI.Controllers
         private readonly ArcaneVaultContext _context;
         private readonly IWebHostEnvironment _env;
 
-        public CatalogItemsController(ArcaneVaultContext context)
-        {
-            _context = context;
-            _env = null!; // will be injected when available via new constructor overload
-        }
-
         public CatalogItemsController(ArcaneVaultContext context, IWebHostEnvironment env)
         {
             _context = context;
