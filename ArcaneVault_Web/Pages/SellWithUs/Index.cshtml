@@ -1,0 +1,119 @@
+@page
+@model ArcaneVault_Web.Pages.SellWithUs.IndexModel
+
+@{
+    ViewData["Title"] = "Sell with Us";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <h2>Sell with Us</h2>
+</div>
+
+<!-- Info Section -->
+<div class="sell-info-section">
+    <div class="sell-info-content">
+        <h3>List Your Collectibles</h3>
+        <p>
+            Have rare items gathering dust? List them on ArcaneVault and reach
+            thousands of collectors worldwide. Simply fill out the form below
+            to submit your item to our catalog.
+        </p>
+        <div class="sell-features">
+            <div class="sell-feature">
+                <span class="sell-feature-icon">&#x1F4B0;</span>
+                <div>
+                    <strong>Reach Buyers</strong>
+                    <span>Access our growing community of collectors</span>
+                </div>
+            </div>
+            <div class="sell-feature">
+                <span class="sell-feature-icon">&#x1F6E1;&#xFE0F;</span>
+                <div>
+                    <strong>Secure Listings</strong>
+                    <span>Your items are protected and verified</span>
+                </div>
+            </div>
+            <div class="sell-feature">
+                <span class="sell-feature-icon">&#x26A1;</span>
+                <div>
+                    <strong>Quick Setup</strong>
+                    <span>List an item in under a minute</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Submission Form -->
+<div class="sell-form-container">
+    <h3 style="margin-bottom: 20px;">Submit Your Item</h3>
+
+    <form method="post" enctype="multipart/form-data">
+
+        <div asp-validation-summary="ModelOnly"
+             class="text-danger" style="margin-bottom: 16px;"></div>
+
+        <div class="mb-3">
+            <label asp-for="CatalogItem.ItemName" class="form-label">
+                Item Name
+            </label>
+            <input asp-for="CatalogItem.ItemName"
+                   class="form-control"
+                   placeholder="e.g. Marvel Legends Spider-Man 6-Inch Figure" />
+            <span asp-validation-for="CatalogItem.ItemName"
+                  class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="CatalogItem.CategoryCode" class="form-label">
+                Category
+            </label>
+
+            @if (Model.CategoryList.Count == 0)
+            {
+                <div class="alert-info" style="padding: 12px; border-radius: var(--radius-sm); font-size: 0.85rem;">
+                    No categories available at the moment. Please try again later.
+                </div>
+            }
+            else
+            {
+                <select asp-for="CatalogItem.CategoryCode" class="form-select">
+                    <option value="">-- Select a Category --</option>
+                    @foreach (var category in Model.CategoryList)
+                    {
+                        <option value="@category.CategoryCode">
+                            @category.CategoryName
+                        </option>
+                    }
+                </select>
+            }
+
+            <span asp-validation-for="CatalogItem.CategoryCode"
+                  class="text-danger"></span>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label">Product Image (optional)</label>
+            <input asp-for="ImageFile" type="file" class="form-control"
+                   accept="image/*" />
+            <small style="color: var(--text-muted); font-size: 0.78rem; margin-top: 4px; display: block;">
+                Upload a clear photo of your item. JPG, PNG up to 5 MB.
+            </small>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <button type="submit" class="btn btn-accent">
+                Submit Item
+            </button>
+            <a asp-page="/Index" class="btn btn-outline-secondary">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

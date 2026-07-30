@@ -59,7 +59,11 @@
                 <li><a asp-page="/CollectionItems/Available">Shop All</a></li>
                 <li><a asp-page="/CollectionItems/Index">My Collection</a></li>
                 <li><a asp-page="/Categories/Index">Categories</a></li>
-                <li><a asp-page="/CatalogItems/Index">Manage Items</a></li>
+                <li><a asp-page="/SellWithUs/Index">Sell with Us</a></li>
+                @if (Context.Session.GetInt32("RoleId") == 1)
+                {
+                    <li><a asp-page="/CatalogItems/Index">Manage Items</a></li>
+                }
                 <li><a asp-page="/Privacy">Privacy</a></li>
             </ul>
         </div>

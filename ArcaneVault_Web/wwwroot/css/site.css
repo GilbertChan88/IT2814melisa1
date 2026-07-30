@@ -801,3 +801,72 @@ input[type="file"].form-control::file-selector-button:hover {
 /* ===== Button Sizes ===== */
 .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
 .btn-lg { padding: 12px 24px; font-size: 1rem; }
+
+
+/* ===== Sell With Us Page ===== */
+.sell-info-section {
+  background: linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-card) 100%);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 40px;
+  margin-bottom: 32px;
+}
+
+.sell-info-content h3 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.sell-info-content p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  max-width: 600px;
+  margin-bottom: 24px;
+}
+
+.sell-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.sell-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.sell-feature-icon {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.sell-feature strong {
+  display: block;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  margin-bottom: 2px;
+}
+
+.sell-feature span {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.sell-form-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  max-width: 640px;
+}
+
+.sell-form-container h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
