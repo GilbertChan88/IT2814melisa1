@@ -27,6 +27,9 @@ namespace ArcaneVault_WebAPI
             {
                 var context = scope.ServiceProvider.GetRequiredService<ArcaneVaultContext>();
 
+                // Apply any pending migrations (e.g., AddCatalogItemImageUrl)
+                context.Database.Migrate();
+
                 // Add Staff role if it doesn't exist
                 if (!context.ArcaneVaultUserRoles.Any(r => r.RoleId == 1))
                 {
