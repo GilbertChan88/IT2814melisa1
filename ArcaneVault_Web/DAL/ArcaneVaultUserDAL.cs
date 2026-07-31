@@ -1,4 +1,4 @@
-﻿using ArcaneVault_Web.Models;
+using ArcaneVault_Web.Models;
 using System.Net.Http.Json;
 
 namespace ArcaneVault_Web.DAL
@@ -7,33 +7,22 @@ namespace ArcaneVault_Web.DAL
     {
         public static async Task<List<ArcaneVaultUser>> GetArcaneVaultUsers()
         {
-            HttpClient client = new HttpClient();
+            var users = await ApiConfig.Client
+                .GetFromJsonAsync<List<ArcaneVaultUser>>("api/ArcaneVaultUsers");
 
-            var users = await client.GetFromJsonAsync<List<ArcaneVaultUser>>
-            (
-                "https://localhost:7297/api/ArcaneVaultUsers"
-            );
-
-            return users;
+            return users ?? new List<ArcaneVaultUser>();
         }
 
         public static async Task<bool> CheckEmail(string email)
         {
-            HttpClient client = new HttpClient();
-
-            return await client.GetFromJsonAsync<bool>
-            (
-                $"https://localhost:7297/api/ArcaneVaultUsers/CheckEmail/{email}"
-            );
+            return await ApiConfig.Client.GetFromJsonAsync<bool>(
+                $"api/ArcaneVaultUsers/CheckEmail/{Uri.EscapeDataString(email)}");
         }
 
         public static async Task<ArcaneVaultUser?> Login(LoginModel login)
         {
-            HttpClient client = new HttpClient();
-
-            var response = await client.PostAsJsonAsync(
-                "https://localhost:7297/api/ArcaneVaultUsers/Login",
-                login);
+            var response = await ApiConfig.Client.PostAsJsonAsync(
+                "api/ArcaneVaultUsers/Login", login);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -42,24 +31,18 @@ namespace ArcaneVault_Web.DAL
 
             return await response.Content.ReadFromJsonAsync<ArcaneVaultUser>();
         }
-        //Change password
-        public static async Task<HttpResponseMessage> ChangePassword(ChangePasswordModel changePassword)
-        {
-            HttpClient client = new HttpClient();
 
-            return await client.PutAsJsonAsync(
-                "https://localhost:7297/api/ArcaneVaultUsers/ChangePassword",
-                changePassword);
+        public static async Task<HttpResponseMessage> ChangePassword(
+            ChangePasswordModel changePassword)
+        {
+            return await ApiConfig.Client.PutAsJsonAsync(
+                "api/ArcaneVaultUsers/ChangePassword", changePassword);
         }
-        public static async Task<HttpResponseMessage> CreateArcaneVaultUser(ArcaneVaultUser user)
-        {
-            HttpClient client = new HttpClient();
 
-            return await client.PostAsJsonAsync
-            (
-                "https://localhost:7297/api/ArcaneVaultUsers",
-                user
-            );
+        public static async Task<HttpResponseMessage> CreateArcaneVaultUser(
+            ArcaneVaultUser user)
+        {
+            return await ApiConfig.Client.PostAsJsonAsync("api/ArcaneVaultUsers", user);
         }
     }
 }

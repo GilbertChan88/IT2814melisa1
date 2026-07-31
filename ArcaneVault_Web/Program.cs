@@ -5,14 +5,25 @@ namespace ArcaneVault_Web
     public class Program
     {
         /// <summary>
-        /// Base address of the backend API. Kept in one place so the typed
-        /// clients below cannot drift apart.
+        /// Fallback API address, used when nothing is configured. Override with
+        /// ApiSettings:BaseUrl in appsettings, or the ApiSettings__BaseUrl
+        /// environment variable.
         /// </summary>
-        private const string ApiBaseUrl = "https://localhost:7297/";
+        private const string DefaultApiBaseUrl = "https://localhost:7297/";
+
+        private static string _apiBaseUrl = DefaultApiBaseUrl;
 
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            _apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"]
+                ?? DefaultApiBaseUrl;
+
+            // Point the static DALs and image URL resolution at the same API
+            // address the typed clients use.
+            ApiConfig.Configure(_apiBaseUrl);
+            Models.ImageUrlResolver.Configure(_apiBaseUrl);
 
             // Add services to the container.
             builder.Services.AddRazorPages();
@@ -68,7 +79,7 @@ namespace ArcaneVault_Web
         {
             builder.Services.AddHttpClient<TClient>(client =>
             {
-                client.BaseAddress = new Uri(ApiBaseUrl);
+                client.BaseAddress = new Uri(_apiBaseUrl);
             });
         }
     }

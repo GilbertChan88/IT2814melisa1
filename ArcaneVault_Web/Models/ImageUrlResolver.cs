@@ -7,7 +7,19 @@ namespace ArcaneVault_Web.Models
     /// </summary>
     public static class ImageUrlResolver
     {
-        private const string ApiBaseUrl = "https://localhost:7297";
+        private static string _apiBaseUrl = "https://localhost:7297";
+
+        /// <summary>
+        /// Called once at startup so the resolver uses the same API address as
+        /// the typed HTTP clients instead of a second hardcoded copy.
+        /// </summary>
+        public static void Configure(string apiBaseUrl)
+        {
+            if (!string.IsNullOrWhiteSpace(apiBaseUrl))
+            {
+                _apiBaseUrl = apiBaseUrl.TrimEnd('/');
+            }
+        }
 
         public static string? Resolve(string? imageUrl)
         {
@@ -29,7 +41,7 @@ namespace ArcaneVault_Web.Models
             }
 
             // Legacy relative path pointing at a file on the API server.
-            return ApiBaseUrl + imageUrl;
+            return _apiBaseUrl + imageUrl;
         }
     }
 }

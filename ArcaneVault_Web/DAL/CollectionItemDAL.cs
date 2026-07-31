@@ -1,4 +1,4 @@
-﻿using ArcaneVault_Web.Models;
+using ArcaneVault_Web.Models;
 using System.Net.Http.Json;
 
 namespace ArcaneVault_Web.DAL
@@ -7,77 +7,49 @@ namespace ArcaneVault_Web.DAL
     {
         public static async Task<List<CollectionItem>> GetUserCollectionItems(string username)
         {
-            HttpClient client = new HttpClient();
+            var items = await ApiConfig.Client.GetFromJsonAsync<List<CollectionItem>>(
+                $"api/CollectionItems/User/{Uri.EscapeDataString(username)}");
 
-            return await client.GetFromJsonAsync<List<CollectionItem>>
-            (
-                $"https://localhost:7297/api/CollectionItems/User/{username}"
-            );
+            return items ?? new List<CollectionItem>();
         }
 
         public static async Task<List<CollectionItem>> GetCollectionItems()
         {
-            HttpClient client = new HttpClient();
+            var collectionItems = await ApiConfig.Client
+                .GetFromJsonAsync<List<CollectionItem>>("api/CollectionItems");
 
-            var collectionItems = await client.GetFromJsonAsync<List<CollectionItem>>
-            (
-                "https://localhost:7297/api/CollectionItems"
-            );
-
-            return collectionItems;
+            return collectionItems ?? new List<CollectionItem>();
         }
 
-        public static async Task<CollectionItem> GetCollectionItem(int id)
+        public static async Task<CollectionItem?> GetCollectionItem(int id)
         {
-            HttpClient client = new HttpClient();
-
-            var collectionItem = await client.GetFromJsonAsync<CollectionItem>
-            (
-                $"https://localhost:7297/api/CollectionItems/{id}"
-            );
-
-            return collectionItem;
+            return await ApiConfig.Client
+                .GetFromJsonAsync<CollectionItem>($"api/CollectionItems/{id}");
         }
 
-        public static async Task<HttpResponseMessage> CreateCollectionItem(CollectionItem collectionItem)
+        public static async Task<HttpResponseMessage> CreateCollectionItem(
+            CollectionItem collectionItem)
         {
-            HttpClient client = new HttpClient();
-
-            return await client.PostAsJsonAsync
-            (
-                "https://localhost:7297/api/CollectionItems",
-                collectionItem
-            );
+            return await ApiConfig.Client.PostAsJsonAsync(
+                "api/CollectionItems", collectionItem);
         }
 
         public static async Task<HttpResponseMessage> AddToCollection(
-    AddToCollectionModel model)
+            AddToCollectionModel model)
         {
-            HttpClient client = new HttpClient();
-
-            return await client.PostAsJsonAsync(
-                "https://localhost:7297/api/CollectionItems",
-                model);
+            return await ApiConfig.Client.PostAsJsonAsync("api/CollectionItems", model);
         }
-        public static async Task<HttpResponseMessage> UpdateCollectionItem(CollectionItem collectionItem)
-        {
-            HttpClient client = new HttpClient();
 
-            return await client.PutAsJsonAsync
-            (
-                $"https://localhost:7297/api/CollectionItems/{collectionItem.ItemId}",
-                collectionItem
-            );
+        public static async Task<HttpResponseMessage> UpdateCollectionItem(
+            CollectionItem collectionItem)
+        {
+            return await ApiConfig.Client.PutAsJsonAsync(
+                $"api/CollectionItems/{collectionItem.ItemId}", collectionItem);
         }
 
         public static async Task<HttpResponseMessage> DeleteCollectionItem(int id)
         {
-            HttpClient client = new HttpClient();
-
-            return await client.DeleteAsync
-            (
-                $"https://localhost:7297/api/CollectionItems/{id}"
-            );
+            return await ApiConfig.Client.DeleteAsync($"api/CollectionItems/{id}");
         }
     }
 }

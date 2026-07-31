@@ -1,4 +1,4 @@
-﻿using ArcaneVault_Web.Models;
+using ArcaneVault_Web.Models;
 using System.Net.Http.Json;
 
 namespace ArcaneVault_Web.DAL
@@ -7,54 +7,37 @@ namespace ArcaneVault_Web.DAL
     {
         public static async Task<List<Category>> GetCategories()
         {
-            HttpClient client = new HttpClient();
+            var categories = await ApiConfig.Client
+                .GetFromJsonAsync<List<Category>>("api/Categories");
 
-            var categories = await client.GetFromJsonAsync<List<Category>>
-            (
-                "https://localhost:7297/api/Categories"
-            );
-
-            return categories;
+            return categories ?? new List<Category>();
         }
 
         //CREATE
         public static async Task<HttpResponseMessage> CreateCategory(Category category)
         {
-            HttpClient client = new HttpClient();
-
-            return await client.PostAsJsonAsync(
-                "https://localhost:7297/api/Categories",
-                category);
+            return await ApiConfig.Client.PostAsJsonAsync("api/Categories", category);
         }
 
         //UPDATE
         public static async Task<HttpResponseMessage> UpdateCategory(Category category)
         {
-            HttpClient client = new HttpClient();
-
-            return await client.PutAsJsonAsync(
-                $"https://localhost:7297/api/Categories/{category.CategoryCode}",
-                category);
+            return await ApiConfig.Client.PutAsJsonAsync(
+                $"api/Categories/{Uri.EscapeDataString(category.CategoryCode)}", category);
         }
 
         //GET (edit category)
-        public static async Task<Category> GetCategory(string id)
+        public static async Task<Category?> GetCategory(string id)
         {
-            HttpClient client = new HttpClient();
-
-            var category = await client.GetFromJsonAsync<Category>(
-                $"https://localhost:7297/api/Categories/{id}");
-
-            return category;
+            return await ApiConfig.Client.GetFromJsonAsync<Category>(
+                $"api/Categories/{Uri.EscapeDataString(id)}");
         }
 
-        //DELETE 
+        //DELETE
         public static async Task<HttpResponseMessage> DeleteCategory(string id)
         {
-            HttpClient client = new HttpClient();
-
-            return await client.DeleteAsync(
-                $"https://localhost:7297/api/Categories/{id}");
+            return await ApiConfig.Client.DeleteAsync(
+                $"api/Categories/{Uri.EscapeDataString(id)}");
         }
     }
 }
