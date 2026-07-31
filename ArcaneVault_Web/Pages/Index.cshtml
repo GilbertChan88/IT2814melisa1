@@ -63,9 +63,9 @@
         {
             foreach (var item in Model.FeaturedItems)
             {
-                var src = string.IsNullOrWhiteSpace(item.ImageUrl)
+                var src = string.IsNullOrWhiteSpace(item.ResolvedImageUrl)
                     ? Url.Content("~/images/product-placeholder.png")
-                    : item.ImageUrl;
+                    : item.ResolvedImageUrl;
 
                 <div class="product-card">
                     <div class="badge-stock">In Stock</div>

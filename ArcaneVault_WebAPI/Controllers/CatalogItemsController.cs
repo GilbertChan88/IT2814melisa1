@@ -217,7 +217,11 @@ namespace ArcaneVault_WebAPI.Controllers
                 await file.CopyToAsync(stream);
             }
 
-            catalogItem.ImageUrl = "/images/catalog/" + fileName;
+            // Build absolute URL so the image is accessible from any client/frontend
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            var imageUrl = $"{baseUrl}/images/catalog/{fileName}";
+
+            catalogItem.ImageUrl = imageUrl;
             await _context.SaveChangesAsync();
 
             return Ok(new { imageUrl = catalogItem.ImageUrl });

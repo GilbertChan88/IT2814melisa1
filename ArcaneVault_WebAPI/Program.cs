@@ -16,6 +16,17 @@ namespace ArcaneVault_WebAPI
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
 
+            // Allow frontend to load images and call API cross-origin
+            builder.Services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(policy =>
+                {
+                    policy.AllowAnyOrigin()
+                          .AllowAnyHeader()
+                          .AllowAnyMethod();
+                });
+            });
+
             //CHATGPT added line:
             builder.Services.AddDbContext<ArcaneVaultContext>(options =>
     options.UseSqlite("Data Source=ArcaneVault.db"));
@@ -214,6 +225,9 @@ namespace ArcaneVault_WebAPI
             }
 
             app.UseHttpsRedirection();
+
+            // Enable CORS so frontend can load images from the API
+            app.UseCors();
 
             // Serve static files so uploaded images are accessible
             app.UseStaticFiles();

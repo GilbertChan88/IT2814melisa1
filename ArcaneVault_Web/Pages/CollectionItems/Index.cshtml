@@ -56,9 +56,9 @@ else
     <div class="product-grid">
         @foreach (var item in Model.CollectionItemList)
         {
-            var imgSrc = string.IsNullOrWhiteSpace(item.ImageUrl)
+            var imgSrc = string.IsNullOrWhiteSpace(item.ResolvedImageUrl)
                 ? Url.Content("~/images/product-placeholder.png")
-                : item.ImageUrl;
+                : item.ResolvedImageUrl;
 
             <div class="product-card">
                 <img src="@imgSrc" alt="@item.ItemName" />

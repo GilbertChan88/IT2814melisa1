@@ -31,5 +31,26 @@ namespace ArcaneVault_Web.Models
 
         // Image URL from linked CatalogItem
         public string? ImageUrl { get; set; }
+
+        /// <summary>
+        /// Returns the resolved image URL. Handles relative API paths
+        /// by prepending the API base URL for uploaded images.
+        /// </summary>
+        public string? ResolvedImageUrl
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(ImageUrl))
+                    return null;
+
+                if (ImageUrl.StartsWith("http://") || ImageUrl.StartsWith("https://"))
+                    return ImageUrl;
+
+                if (ImageUrl.Contains("sample-"))
+                    return ImageUrl;
+
+                return "https://localhost:7297" + ImageUrl;
+            }
+        }
     }
 }
