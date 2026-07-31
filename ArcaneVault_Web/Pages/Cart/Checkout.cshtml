@@ -1,0 +1,110 @@
+@page
+@model ArcaneVault_Web.Pages.Cart.CheckoutModel
+
+@{
+    ViewData["Title"] = "Checkout";
+}
+
+<div class="page-header">
+    <div>
+        <h2>Checkout</h2>
+        <p class="page-subtitle">Where should we send your order?</p>
+    </div>
+    <a asp-page="Index" class="btn btn-outline-secondary">Back to cart</a>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert-danger" role="alert">@Model.ErrorMessage</div>
+}
+
+<div class="cart-layout">
+    <div class="checkout-form-panel">
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <h3 class="form-section-title">Shipping details</h3>
+
+            <div class="mb-3">
+                <label asp-for="Form.ShippingName" class="form-label"></label>
+                <input asp-for="Form.ShippingName" class="form-control"
+                       autocomplete="name" />
+                <span asp-validation-for="Form.ShippingName" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Form.ShippingAddress" class="form-label"></label>
+                <input asp-for="Form.ShippingAddress" class="form-control"
+                       placeholder="Street address" autocomplete="street-address" />
+                <span asp-validation-for="Form.ShippingAddress" class="text-danger"></span>
+            </div>
+
+            <div class="form-row-2">
+                <div class="mb-3">
+                    <label asp-for="Form.ShippingCity" class="form-label"></label>
+                    <input asp-for="Form.ShippingCity" class="form-control"
+                           autocomplete="address-level2" />
+                    <span asp-validation-for="Form.ShippingCity" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Form.ShippingPostalCode" class="form-label"></label>
+                    <input asp-for="Form.ShippingPostalCode" class="form-control"
+                           autocomplete="postal-code" />
+                    <span asp-validation-for="Form.ShippingPostalCode" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Form.ShippingCountry" class="form-label"></label>
+                <input asp-for="Form.ShippingCountry" class="form-control"
+                       autocomplete="country-name" />
+                <span asp-validation-for="Form.ShippingCountry" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn btn-accent btn-block">
+                Place order &middot; @Model.Cart.Subtotal.ToString("C")
+            </button>
+
+            <p class="text-muted-small summary-note">
+                This is a coursework project, so no payment is taken and no card
+                details are collected.
+            </p>
+        </form>
+    </div>
+
+    <aside class="cart-summary">
+        <h3>Order summary</h3>
+
+        <ul class="checkout-line-list">
+            @foreach (var line in Model.Cart.Items)
+            {
+                <li>
+                    <span class="checkout-line-qty">@line.Quantity&times;</span>
+                    <span class="checkout-line-name">@line.ItemName</span>
+                    <span class="checkout-line-total">@line.LineTotal.ToString("C")</span>
+                </li>
+            }
+        </ul>
+
+        <dl class="summary-list">
+            <div>
+                <dt>Units</dt>
+                <dd>@Model.Cart.ItemCount</dd>
+            </div>
+            <div>
+                <dt>Subtotal</dt>
+                <dd>@Model.Cart.Subtotal.ToString("C")</dd>
+            </div>
+        </dl>
+
+        <div class="summary-total">
+            <span>Total</span>
+            <strong>@Model.Cart.Subtotal.ToString("C")</strong>
+        </div>
+    </aside>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

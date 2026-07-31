@@ -1,0 +1,158 @@
+@page
+@model ArcaneVault_Web.Pages.Cart.IndexModel
+
+@{
+    ViewData["Title"] = "Your Cart";
+}
+
+<div class="page-header">
+    <div>
+        <h2>Your Cart</h2>
+        <p class="page-subtitle">
+            @if (Model.Cart.IsEmpty)
+            {
+                <span>Nothing here yet.</span>
+            }
+            else
+            {
+                <span>
+                    @Model.Cart.ItemCount
+                    @(Model.Cart.ItemCount == 1 ? "unit" : "units")
+                    across @Model.Cart.Items.Count
+                    @(Model.Cart.Items.Count == 1 ? "line" : "lines")
+                </span>
+            }
+        </p>
+    </div>
+    <a asp-page="/CollectionItems/Available" class="btn btn-outline-secondary">
+        Continue shopping
+    </a>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.StatusMessage))
+{
+    <div class="alert-success" role="status">@Model.StatusMessage</div>
+}
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert-danger" role="alert">@Model.ErrorMessage</div>
+}
+
+@if (Model.Cart.IsEmpty)
+{
+    <div class="empty-state">
+        <div class="empty-icon">&#128722;</div>
+        <strong>Your cart is empty</strong>
+        <p>Add some collectibles and they'll show up here.</p>
+        <a asp-page="/CollectionItems/Available" class="btn btn-primary">Browse catalogue</a>
+    </div>
+}
+else
+{
+    @if (Model.Cart.HasStockIssues)
+    {
+        <div class="alert-warning" role="alert">
+            One or more lines exceed the stock we have left. Reduce those
+            quantities before checking out.
+        </div>
+    }
+
+    <div class="cart-layout">
+        <div class="cart-lines">
+            @foreach (var line in Model.Cart.Items)
+            {
+                var imageSrc = line.ResolvedImageUrl
+                    ?? Url.Content("~/images/product-placeholder.png");
+
+                <article class="cart-row @(line.ExceedsStock ? "has-issue" : "")">
+                    <a asp-page="/CatalogItems/Details" asp-route-id="@line.CatalogItemId"
+                       class="cart-thumb">
+                        <img src="@imageSrc" alt="@line.ItemName" loading="lazy" />
+                    </a>
+
+                    <div class="cart-info">
+                        <a asp-page="/CatalogItems/Details" asp-route-id="@line.CatalogItemId"
+                           class="title-link">
+                            <h3 class="cart-title">@line.ItemName</h3>
+                        </a>
+                        <div class="meta">@(line.CategoryName ?? "Uncategorised")</div>
+                        <div class="text-muted-small">
+                            @line.UnitPrice.ToString("C") each &middot;
+                            @line.StockQuantity in stock
+                        </div>
+                        @if (line.ExceedsStock)
+                        {
+                            <div class="inline-error">
+                                Only @line.StockQuantity available
+                            </div>
+                        }
+                    </div>
+
+                    <form method="post" asp-page-handler="Update" class="cart-qty-form">
+                        <input type="hidden" name="cartItemId" value="@line.CartItemId" />
+                        <label class="visually-hidden" for="qty-@line.CartItemId">Quantity</label>
+                        <input id="qty-@line.CartItemId" name="quantity" type="number"
+                               class="form-control qty-input"
+                               value="@line.Quantity" min="1" max="@line.StockQuantity" />
+                        <button type="submit" class="btn btn-outline-secondary btn-sm">
+                            Update
+                        </button>
+                    </form>
+
+                    <div class="cart-line-total">@line.LineTotal.ToString("C")</div>
+
+                    <form method="post" asp-page-handler="Remove">
+                        <input type="hidden" name="cartItemId" value="@line.CartItemId" />
+                        <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+                    </form>
+                </article>
+            }
+
+            <form method="post" asp-page-handler="Clear" class="cart-clear">
+                <button type="submit" class="btn btn-outline-secondary btn-sm">
+                    Clear cart
+                </button>
+            </form>
+        </div>
+
+        <aside class="cart-summary">
+            <h3>Order summary</h3>
+            <dl class="summary-list">
+                <div>
+                    <dt>Units</dt>
+                    <dd>@Model.Cart.ItemCount</dd>
+                </div>
+                <div>
+                    <dt>Subtotal</dt>
+                    <dd>@Model.Cart.Subtotal.ToString("C")</dd>
+                </div>
+                <div>
+                    <dt>Shipping</dt>
+                    <dd class="text-muted-small">Calculated at checkout</dd>
+                </div>
+            </dl>
+            <div class="summary-total">
+                <span>Total</span>
+                <strong>@Model.Cart.Subtotal.ToString("C")</strong>
+            </div>
+
+            @if (Model.Cart.HasStockIssues)
+            {
+                <button type="button" class="btn btn-accent btn-block disabled" disabled>
+                    Resolve stock issues
+                </button>
+            }
+            else
+            {
+                <a asp-page="Checkout" class="btn btn-accent btn-block">
+                    Proceed to checkout
+                </a>
+            }
+
+            <p class="text-muted-small summary-note">
+                Prices are captured when you place the order, so later catalogue
+                changes won't affect your receipt.
+            </p>
+        </aside>
+    </div>
+}
