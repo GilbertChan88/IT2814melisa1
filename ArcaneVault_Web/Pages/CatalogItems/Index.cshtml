@@ -1,96 +1,167 @@
 @page
 @model ArcaneVault_Web.Pages.CatalogItems.IndexModel
+@using ArcaneVault_Web.Models
 
 @{
-    ViewData["Title"] = "Manage Items";
+    ViewData["Title"] = "Manage Catalogue";
 }
 
 <div class="page-header">
-    <h2>Manage Catalog Items</h2>
-    <a asp-page="Create" class="btn btn-accent">+ Create New Item</a>
-</div>
-
-<!-- Stats -->
-<div class="stats-bar">
-    <div class="stat-card">
-        <div class="stat-number">@Model.CatalogItemList.Count</div>
-        <div class="stat-label">Total Items</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-number">@Model.CatalogItemList.Select(x => x.CategoryName ?? "Other").Distinct().Count()</div>
-        <div class="stat-label">Categories</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-number">@Model.CatalogItemList.Count(x => !x.IsDeleted)</div>
-        <div class="stat-label">Active</div>
-    </div>
-</div>
-
-@if (Model.CatalogItemList.Count == 0)
-{
-    <div class="alert-info" style="padding: 32px; text-align: center; border-radius: var(--radius-md);">
-        <div style="font-size: 2rem; margin-bottom: 12px;">&#x1F4CB;</div>
-        <strong>No catalog items yet</strong>
-        <p style="color: var(--text-muted); margin-top: 8px; margin-bottom: 16px;">
-            Create your first catalog item to get started.
+    <div>
+        <h2>Manage Catalogue</h2>
+        <p class="page-subtitle">
+            Every listing, including items still awaiting review.
         </p>
-        <a asp-page="Create" class="btn btn-primary">Create Item</a>
+    </div>
+    <div class="header-actions-group">
+        <a asp-page="/Admin/Submissions" class="btn btn-outline-secondary">Approval queue</a>
+        <a asp-page="Create" class="btn btn-accent">+ New item</a>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.StatusMessage))
+{
+    <div class="alert-success" role="status">@Model.StatusMessage</div>
+}
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert-danger" role="alert">@Model.ErrorMessage</div>
+}
+
+<form method="get" class="filter-panel filter-panel-compact">
+    <input type="hidden" name="PageNumber" value="1" />
+    <div class="filter-row">
+        <div class="filter-field filter-search">
+            <label asp-for="SearchString" class="form-label">Search</label>
+            <input asp-for="SearchString" name="Search" class="form-control"
+                   placeholder="Item name or description&hellip;" />
+        </div>
+        <div class="filter-field">
+            <label asp-for="CategoryCode" class="form-label">Category</label>
+            <select asp-for="CategoryCode" class="form-select">
+                <option value="">All categories</option>
+                @foreach (var category in Model.CategoryList)
+                {
+                    <option value="@category.CategoryCode">@category.CategoryName</option>
+                }
+            </select>
+        </div>
+        <div class="filter-field">
+            <label asp-for="StatusFilter" class="form-label">Status</label>
+            <select asp-for="StatusFilter" class="form-select">
+                <option value="">All statuses</option>
+                @foreach (var (value, label) in ArcaneVault_Web.Pages.CatalogItems.IndexModel.StatusOptions)
+                {
+                    <option value="@value">@label</option>
+                }
+            </select>
+        </div>
+        <div class="filter-field filter-field-actions">
+            <button type="submit" class="btn btn-accent">Apply</button>
+            <a asp-page="Index" class="btn btn-outline-secondary">Clear</a>
+        </div>
+    </div>
+</form>
+
+@if (Model.Results.Items.Count == 0)
+{
+    <div class="empty-state">
+        <div class="empty-icon">&#128203;</div>
+        <strong>No items found</strong>
+        <p>Nothing matches these filters.</p>
+        <a asp-page="Create" class="btn btn-primary">Create an item</a>
     </div>
 }
 else
 {
-    <div style="overflow-x: auto; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+    <div class="table-wrapper">
         <table class="table-dark-custom">
             <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>Item Name</th>
+                    <th>Item</th>
                     <th>Category</th>
+                    <th class="num">Price</th>
+                    <th>Stock</th>
                     <th>Status</th>
-                    <th style="text-align: right;">Actions</th>
+                    <th class="num">Rating</th>
+                    <th class="num">Views</th>
+                    <th class="actions-col">Actions</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var item in Model.CatalogItemList)
+                @foreach (var item in Model.Results.Items)
                 {
                     <tr>
-                        <td style="color: var(--text-muted);">#@item.CatalogItemId</td>
-                        <td style="font-weight: 600;">@item.ItemName</td>
                         <td>
-                            <span class="category-pill" style="padding: 4px 12px; font-size: 0.75rem;">
+                            <div class="table-item-cell">
+                                <img src="@(item.ResolvedImageUrl ?? Url.Content("~/images/product-placeholder.png"))"
+                                     alt="@item.ItemName" class="table-thumb" loading="lazy" />
+                                <div>
+                                    <a asp-page="Details" asp-route-id="@item.CatalogItemId"
+                                       class="title-link">@item.ItemName</a>
+                                    <div class="text-muted-small">
+                                        #@item.CatalogItemId
+                                        @if (!string.IsNullOrWhiteSpace(item.SubmittedBy))
+                                        {
+                                            <span>&middot; by @item.SubmittedBy</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="category-pill">
                                 @(item.CategoryName ?? item.CategoryCode)
                             </span>
                         </td>
+                        <td class="num">@item.Price.ToString("C")</td>
                         <td>
-                            @if (item.IsDeleted)
+                            <form method="post" asp-page-handler="UpdateStock" class="stock-form">
+                                <input type="hidden" name="catalogItemId" value="@item.CatalogItemId" />
+                                <input type="hidden" name="PageNumber" value="@Model.Results.Page" />
+                                <input type="hidden" name="Search" value="@Model.SearchString" />
+                                <input type="hidden" name="CategoryCode" value="@Model.CategoryCode" />
+                                <input type="hidden" name="StatusFilter" value="@Model.StatusFilter" />
+                                <label class="visually-hidden" for="stock-@item.CatalogItemId">
+                                    Stock quantity
+                                </label>
+                                <input id="stock-@item.CatalogItemId" name="stockQuantity"
+                                       type="number" min="0" value="@item.StockQuantity"
+                                       class="form-control stock-input" />
+                                <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                    Set
+                                </button>
+                            </form>
+                            @if (!item.InStock)
                             {
-                                <span style="color: var(--danger); font-size: 0.8rem; font-weight: 600;">Deleted</span>
+                                <div class="text-muted-small stock-note">Out of stock</div>
+                            }
+                        </td>
+                        <td>
+                            <span class="pill @(item.Status switch {
+                                0 => "status-pending",
+                                1 => "status-delivered",
+                                2 => "status-cancelled",
+                                _ => "status-pending" })">@item.StatusName</span>
+                        </td>
+                        <td class="num">
+                            @if (item.ReviewCount > 0)
+                            {
+                                <span>@item.AverageRating.ToString("0.0")</span>
+                                <span class="text-muted-small">(@item.ReviewCount)</span>
                             }
                             else
                             {
-                                <span style="color: var(--success); font-size: 0.8rem; font-weight: 600;">Active</span>
+                                <span class="text-muted-small">&ndash;</span>
                             }
                         </td>
-                        <td style="text-align: right;">
-                            <div style="display: inline-flex; gap: 6px;">
-                                <a asp-page="Details"
-                                   asp-route-id="@item.CatalogItemId"
-                                   class="btn btn-info btn-sm"
-                                   style="font-size: 0.75rem; padding: 5px 10px;">
-                                    Details
-                                </a>
-                                <a asp-page="Edit"
-                                   asp-route-id="@item.CatalogItemId"
-                                   class="btn btn-warning btn-sm"
-                                   style="font-size: 0.75rem; padding: 5px 10px;">
-                                    Edit
-                                </a>
-                                <a asp-page="Delete"
-                                   asp-route-id="@item.CatalogItemId"
-                                   class="btn btn-danger btn-sm"
-                                   style="font-size: 0.75rem; padding: 5px 10px;">
-                                    Delete
-                                </a>
+                        <td class="num">@item.ViewCount</td>
+                        <td class="actions-col">
+                            <div class="table-actions">
+                                <a asp-page="Edit" asp-route-id="@item.CatalogItemId"
+                                   class="btn btn-warning btn-sm">Edit</a>
+                                <a asp-page="Delete" asp-route-id="@item.CatalogItemId"
+                                   class="btn btn-danger btn-sm">Delete</a>
                             </div>
                         </td>
                     </tr>
@@ -98,4 +169,6 @@ else
             </tbody>
         </table>
     </div>
+
+    @await Html.PartialAsync("_Pagination", new PaginationViewModel { CurrentPage = Model.Results.Page, TotalPages = Model.Results.TotalPages, TotalCount = Model.Results.TotalCount, FirstItemOnPage = Model.Results.FirstItemOnPage, LastItemOnPage = Model.Results.LastItemOnPage, PageName = "/CatalogItems/Index", RouteValues = Model.RouteValuesForPage(1) })
 }

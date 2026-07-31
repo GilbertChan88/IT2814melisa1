@@ -6,77 +6,83 @@
 }
 
 <div class="page-header">
-    <h2>Create Catalogue Item</h2>
-    <a asp-page="Index" class="btn btn-outline-secondary">Back to List</a>
+    <div>
+        <h2>Create Catalogue Item</h2>
+        <p class="page-subtitle">
+            Items you add here are published immediately.
+        </p>
+    </div>
+    <a asp-page="Index" class="btn btn-outline-secondary">Back to catalogue</a>
 </div>
 
-<div style="max-width: 600px;">
+<div class="sell-form-container">
     <form method="post" enctype="multipart/form-data">
-
-        <div asp-validation-summary="ModelOnly"
-             class="text-danger" style="margin-bottom: 16px;"></div>
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
         <div class="mb-3">
-            <label asp-for="CatalogItem.ItemName"
-                   class="form-label">Item Name</label>
-
-            <input asp-for="CatalogItem.ItemName"
-                   class="form-control"
-                   placeholder="Enter item name..." />
-
-            <span asp-validation-for="CatalogItem.ItemName"
-                  class="text-danger"></span>
+            <label asp-for="CatalogItem.ItemName" class="form-label"></label>
+            <input asp-for="CatalogItem.ItemName" class="form-control"
+                   placeholder="Enter item name&hellip;" />
+            <span asp-validation-for="CatalogItem.ItemName" class="text-danger"></span>
         </div>
 
         <div class="mb-3">
-            <label asp-for="CatalogItem.CategoryCode"
-                   class="form-label">Category</label>
-
+            <label asp-for="CatalogItem.CategoryCode" class="form-label"></label>
             @if (Model.CategoryList.Count == 0)
             {
-                <div class="alert-info" style="padding: 12px; border-radius: var(--radius-sm); font-size: 0.85rem;">
-                    No categories available. Please create a category first or check the API connection.
+                <div class="alert-info">
+                    No categories available. Create a category first, or check the
+                    API connection.
                 </div>
             }
             else
             {
-                <select asp-for="CatalogItem.CategoryCode"
-                        class="form-select">
-
-                    <option value="">-- Select Category --</option>
-
+                <select asp-for="CatalogItem.CategoryCode" class="form-select">
+                    <option value="">-- Select category --</option>
                     @foreach (var category in Model.CategoryList)
                     {
-                        <option value="@category.CategoryCode">
-                            @category.CategoryName
-                        </option>
+                        <option value="@category.CategoryCode">@category.CategoryName</option>
                     }
                 </select>
             }
+            <span asp-validation-for="CatalogItem.CategoryCode" class="text-danger"></span>
+        </div>
 
-            <span asp-validation-for="CatalogItem.CategoryCode"
-                  class="text-danger"></span>
+        <div class="form-row-2">
+            <div class="mb-3">
+                <label asp-for="CatalogItem.Price" class="form-label"></label>
+                <input asp-for="CatalogItem.Price" class="form-control"
+                       type="number" step="0.01" min="0" placeholder="0.00" />
+                <span asp-validation-for="CatalogItem.Price" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="CatalogItem.StockQuantity" class="form-label"></label>
+                <input asp-for="CatalogItem.StockQuantity" class="form-control"
+                       type="number" min="0" />
+                <span asp-validation-for="CatalogItem.StockQuantity" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="CatalogItem.Description" class="form-label"></label>
+            <textarea asp-for="CatalogItem.Description" class="form-control" rows="4"
+                      placeholder="Condition, packaging, edition details&hellip;"></textarea>
+            <span asp-validation-for="CatalogItem.Description" class="text-danger"></span>
         </div>
 
         <div class="mb-4">
             <label class="form-label">Image (optional)</label>
-            <input asp-for="ImageFile" type="file" class="form-control"
-                   accept="image/*" />
+            <input asp-for="ImageFile" type="file" class="form-control" accept="image/*" />
         </div>
 
-        <div style="display: flex; gap: 10px;">
-            <button type="submit" class="btn btn-accent">
-                Create Item
-            </button>
-            <a asp-page="Index" class="btn btn-outline-secondary">
-                Cancel
-            </a>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-accent">Create item</button>
+            <a asp-page="Index" class="btn btn-outline-secondary">Cancel</a>
         </div>
-
     </form>
 </div>
 
-@section Scripts
-{
+@section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }

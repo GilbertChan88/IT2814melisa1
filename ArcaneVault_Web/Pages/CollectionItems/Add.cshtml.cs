@@ -5,6 +5,10 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace ArcaneVault_Web.Pages.CollectionItems
 {
+    /// <summary>
+    /// Adds a catalogue item to the signed-in user's collection, capturing
+    /// condition grading and valuation so the portfolio figures are meaningful.
+    /// </summary>
     public class AddModel : PageModel
     {
         private readonly CatalogItemApiClient _apiClient;
@@ -17,12 +21,11 @@ namespace ArcaneVault_Web.Pages.CollectionItems
         public CatalogItem? CatalogItem { get; set; }
 
         [BindProperty]
-        public AddToCollectionModel AddItem { get; set; }
-            = new AddToCollectionModel();
+        public AddToCollectionModel AddItem { get; set; } = new AddToCollectionModel();
 
         public async Task<IActionResult> OnGetAsync(int id)
         {
-            if (HttpContext.Session.GetString("UserName") == null)
+            if (!HttpContext.IsSignedIn())
             {
                 return RedirectToPage("/Login");
             }
@@ -35,22 +38,26 @@ namespace ArcaneVault_Web.Pages.CollectionItems
             }
 
             AddItem.CatalogItemId = id;
+            AddItem.Quantity = 1;
+            AddItem.AcquiredAt = DateTime.UtcNow.Date;
+
+            // Default the valuation to the catalogue price so the collection
+            // is worth something sensible even if the user skips the field.
+            AddItem.EstimatedValue = CatalogItem.Price;
 
             return Page();
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
-            string? userName =
-                HttpContext.Session.GetString("UserName");
+            var userName = HttpContext.GetUserName();
 
-            if (userName == null)
+            if (string.IsNullOrWhiteSpace(userName))
             {
                 return RedirectToPage("/Login");
             }
 
-            CatalogItem = await _apiClient.GetCatalogItem(
-                AddItem.CatalogItemId);
+            CatalogItem = await _apiClient.GetCatalogItem(AddItem.CatalogItemId);
 
             if (CatalogItem == null)
             {
@@ -64,20 +71,17 @@ namespace ArcaneVault_Web.Pages.CollectionItems
 
             AddItem.UserName = userName;
 
-            HttpResponseMessage response =
-                await CollectionItemDAL.AddToCollection(AddItem);
+            var response = await CollectionItemDAL.AddToCollection(AddItem);
 
             if (!response.IsSuccessStatusCode)
             {
-                string errorMessage =
-                    await response.Content.ReadAsStringAsync();
-
-                ModelState.AddModelError(
-                    "",
-                    errorMessage.Trim('"'));
-
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                ModelState.AddModelError(string.Empty, errorMessage.Trim('"'));
                 return Page();
             }
+
+            TempData["StatusMessage"] =
+                $"\"{CatalogItem.ItemName}\" added to your collection.";
 
             return RedirectToPage("Index");
         }

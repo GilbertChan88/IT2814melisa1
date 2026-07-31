@@ -1,4 +1,15 @@
-@using Microsoft.AspNetCore.Http
+@using ArcaneVault_Web
+@using ArcaneVault_Web.DAL
+@inject SubmissionApiClient SubmissionClient
+
+@{
+    var currentUser = Context.GetUserName();
+    var isSignedIn = !string.IsNullOrWhiteSpace(currentUser);
+    var isAdmin = Context.IsAdmin();
+
+    // Only the admin nav needs this, and it degrades to zero on failure.
+    var pendingSubmissions = isAdmin ? await SubmissionClient.GetPendingCount() : 0;
+}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -16,7 +27,7 @@
 <body>
     <!-- Announcement Banner -->
     <div class="announcement-bar">
-        &#x1F4E6; Every item is IN STOCK &amp; ships within 1-3 business days — No preorders!
+        &#128230; Every item is IN STOCK &amp; ships within 1-3 business days &mdash; No preorders!
     </div>
 
     <!-- Site Header -->
@@ -27,17 +38,20 @@
                     <span class="brand-text">Arcane<span>Vault</span></span>
                 </a>
 
-                <form class="search-form d-none d-sm-flex" method="get" asp-page="/CollectionItems/Available">
-                    <input class="form-control" type="search" name="SearchString"
+                <form class="search-form d-none d-sm-flex" method="get"
+                      asp-page="/CollectionItems/Available">
+                    <label class="visually-hidden" for="header-search">Search</label>
+                    <input id="header-search" class="form-control" type="search" name="Search"
                            placeholder="Search collectibles, figures, cards..." />
                 </form>
 
                 <div class="header-actions">
-                    @if (Context.Session.GetString("UserName") != null)
+                    @if (isSignedIn)
                     {
-                        <span style="color: var(--text-secondary); font-size: 0.85rem;">
-                            Hi, @Context.Session.GetString("UserName")
-                        </span>
+                        <div class="header-icons">
+                            @await Component.InvokeAsync("NavBadges")
+                        </div>
+                        <span class="header-greeting">Hi, @currentUser</span>
                         <a class="btn btn-outline-light" asp-page="/ChangePassword">Account</a>
                         <a class="btn btn-accent" asp-page="/Logout">Logout</a>
                     }
@@ -56,15 +70,40 @@
         <div class="container">
             <ul class="nav-links">
                 <li><a asp-page="/Index">Home</a></li>
-                <li><a asp-page="/CollectionItems/Available">Shop All</a></li>
-                <li><a asp-page="/CollectionItems/Index">My Collection</a></li>
-                <li><a asp-page="/Categories/Index">Categories</a></li>
-                <li><a asp-page="/SellWithUs/Index">Sell with Us</a></li>
-                @if (Context.Session.GetInt32("RoleId") == 1)
+                <li><a asp-page="/CollectionItems/Available">Shop</a></li>
+                @if (isSignedIn)
                 {
-                    <li><a asp-page="/CatalogItems/Index">Manage Items</a></li>
+                    <li><a asp-page="/Dashboard/Index">Dashboard</a></li>
+                    <li><a asp-page="/CollectionItems/Index">My Collection</a></li>
+                    <li><a asp-page="/Trades/Index">Trades</a></li>
+                    <li><a asp-page="/Orders/Index">Orders</a></li>
+                    <li><a asp-page="/SellWithUs/Index">Sell with Us</a></li>
                 }
-                <li><a asp-page="/Privacy">Privacy</a></li>
+                else
+                {
+                    <li><a asp-page="/SellWithUs/Index">Sell with Us</a></li>
+                }
+                <li><a asp-page="/Categories/Index">Categories</a></li>
+
+                @if (isAdmin)
+                {
+                    <li class="nav-divider" aria-hidden="true"></li>
+                    <li>
+                        <a asp-page="/Admin/Analytics" class="nav-admin">Insights</a>
+                    </li>
+                    <li>
+                        <a asp-page="/Admin/Submissions" class="nav-admin">
+                            Approvals
+                            @if (pendingSubmissions > 0)
+                            {
+                                <span class="nav-badge">@pendingSubmissions</span>
+                            }
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-page="/CatalogItems/Index" class="nav-admin">Manage Items</a>
+                    </li>
+                }
             </ul>
         </div>
     </nav>
@@ -84,26 +123,35 @@
                     <h4>Shop</h4>
                     <a asp-page="/CollectionItems/Available">All Items</a>
                     <a asp-page="/Categories/Index">Categories</a>
+                    <a asp-page="/Wishlist/Index">My Wishlist</a>
+                    <a asp-page="/Cart/Index">Cart</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Collecting</h4>
+                    <a asp-page="/Dashboard/Index">Dashboard</a>
                     <a asp-page="/CollectionItems/Index">My Collection</a>
+                    <a asp-page="/Trades/Index">Trades</a>
+                    <a asp-page="/Orders/Index">Orders</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Selling</h4>
+                    <a asp-page="/SellWithUs/Index">List an Item</a>
+                    <a asp-page="/SellWithUs/MyListings">My Listings</a>
                 </div>
                 <div class="footer-col">
                     <h4>Account</h4>
-                    <a asp-page="/Login">Sign In</a>
-                    <a asp-page="/Register">Create Account</a>
-                    <a asp-page="/ChangePassword">Change Password</a>
-                </div>
-                <div class="footer-col">
-                    <h4>Info</h4>
+                    @if (isSignedIn)
+                    {
+                        <a asp-page="/Notifications/Index">Notifications</a>
+                        <a asp-page="/ChangePassword">Change Password</a>
+                        <a asp-page="/Logout">Sign Out</a>
+                    }
+                    else
+                    {
+                        <a asp-page="/Login">Sign In</a>
+                        <a asp-page="/Register">Create Account</a>
+                    }
                     <a asp-page="/Privacy">Privacy Policy</a>
-                    <a href="#">Shipping Info</a>
-                    <a href="#">FAQ</a>
-                </div>
-                <div class="footer-col">
-                    <h4>ArcaneVault</h4>
-                    <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">
-                        Your trusted destination for rare collectibles, 
-                        action figures, cards, and pop culture memorabilia.
-                    </p>
                 </div>
             </div>
             <div class="footer-bottom">
