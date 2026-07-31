@@ -12,12 +12,6 @@ namespace ArcaneVault_WebAPI.Controllers
         private readonly ArcaneVaultContext _context;
         private readonly IWebHostEnvironment _env;
 
-        public CatalogItemsController(ArcaneVaultContext context)
-        {
-            _context = context;
-            _env = null!; // will be injected when available via new constructor overload
-        }
-
         public CatalogItemsController(ArcaneVaultContext context, IWebHostEnvironment env)
         {
             _context = context;
@@ -223,7 +217,11 @@ namespace ArcaneVault_WebAPI.Controllers
                 await file.CopyToAsync(stream);
             }
 
-            catalogItem.ImageUrl = "/images/catalog/" + fileName;
+            // Build absolute URL so the image is accessible from any client/frontend
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            var imageUrl = $"{baseUrl}/images/catalog/{fileName}";
+
+            catalogItem.ImageUrl = imageUrl;
             await _context.SaveChangesAsync();
 
             return Ok(new { imageUrl = catalogItem.ImageUrl });

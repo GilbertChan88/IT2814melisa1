@@ -1,95 +1,93 @@
-﻿@page
+@page
 @model ArcaneVault_Web.Pages.CollectionItems.IndexModel
 
 @{
     ViewData["Title"] = "My Collection";
 }
 
-<h2>My Collection</h2>
+<div class="page-header">
+    <h2>My Collection</h2>
+    <a asp-page="Available" class="btn btn-accent">+ Add Items</a>
+</div>
 
-<p>
-    <a asp-page="Available"
-       class="btn btn-success">
-        Add Item to Collection
-    </a>
-</p>
+<!-- Stats -->
+@if (Model.CollectionItemList != null && Model.CollectionItemList.Count > 0)
+{
+    <div class="stats-bar">
+        <div class="stat-card">
+            <div class="stat-number">@Model.CollectionItemList.Count</div>
+            <div class="stat-label">Total Items</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">@Model.CollectionItemList.Sum(x => x.CurrentQuantity)</div>
+            <div class="stat-label">Total Quantity</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">@Model.CollectionItemList.Select(x => x.CategoryName ?? "Other").Distinct().Count()</div>
+            <div class="stat-label">Categories</div>
+        </div>
+    </div>
+}
 
-<form method="get" class="mb-3">
+<!-- Search Bar -->
+<form method="get" class="mb-4">
     <div class="input-group">
         <input asp-for="SearchString"
                class="form-control"
                placeholder="Search by item name, category or quantity..." />
-
-        <button type="submit"
-                class="btn btn-primary">
-            Search
-        </button>
-
-        <a asp-page="Index"
-           class="btn btn-secondary">
-            Clear
-        </a>
+        <button type="submit" class="btn btn-primary">Search</button>
+        <a asp-page="Index" class="btn btn-outline-secondary">Clear</a>
     </div>
 </form>
 
-@if (Model.CollectionItemList == null ||
-     Model.CollectionItemList.Count == 0)
+@if (Model.CollectionItemList == null || Model.CollectionItemList.Count == 0)
 {
-    <div class="alert alert-info">
-        You do not have any items in your collection yet.
+    <div class="alert-info" style="padding: 32px; text-align: center; border-radius: var(--radius-md);">
+        <div style="font-size: 2rem; margin-bottom: 12px;">&#x1F4E6;</div>
+        <strong>Your collection is empty</strong>
+        <p style="color: var(--text-muted); margin-top: 8px; margin-bottom: 16px;">
+            Start adding items from our catalog to build your collection.
+        </p>
+        <a asp-page="Available" class="btn btn-primary">Browse Available Items</a>
     </div>
 }
 else
 {
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Item ID</th>
-                <th>Item Name</th>
-                <th>Category</th>
-                <th>Starting Quantity</th>
-                <th>Current Quantity</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
+    <div class="product-grid">
+        @foreach (var item in Model.CollectionItemList)
+        {
+            var imgSrc = string.IsNullOrWhiteSpace(item.ResolvedImageUrl)
+                ? Url.Content("~/images/product-placeholder.png")
+                : item.ResolvedImageUrl;
 
-        <tbody>
-            @foreach (var item in Model.CollectionItemList)
-            {
-                <tr>
-                    <td>@item.ItemId</td>
-
-                    <td>@item.ItemName</td>
-
-                    <td>
-                        @(item.CategoryName ?? "Not assigned")
-                    </td>
-
-                    <td>@item.StartingQuantity</td>
-
-                    <td>@item.CurrentQuantity</td>
-
-                    <td>
+            <div class="product-card">
+                <img src="@imgSrc" alt="@item.ItemName" />
+                <div class="card-body">
+                    <div class="title">@item.ItemName</div>
+                    <div class="meta">@(item.CategoryName ?? "Not assigned")</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                        <span class="price">Qty: @item.CurrentQuantity</span>
+                        <span class="text-muted-small">Started: @item.StartingQuantity</span>
+                    </div>
+                    <div style="display: flex; gap: 6px; margin-top: 10px;">
                         <a asp-page="Details"
                            asp-route-id="@item.ItemId"
-                           class="btn btn-info">
+                           class="btn btn-info btn-sm" style="flex:1; text-align:center; font-size:0.75rem; padding:6px;">
                             Details
                         </a>
-
                         <a asp-page="Edit"
                            asp-route-id="@item.ItemId"
-                           class="btn btn-warning">
-                            Edit Quantity
+                           class="btn btn-warning btn-sm" style="flex:1; text-align:center; font-size:0.75rem; padding:6px;">
+                            Edit
                         </a>
-
                         <a asp-page="Delete"
                            asp-route-id="@item.ItemId"
-                           class="btn btn-danger">
+                           class="btn btn-danger btn-sm" style="flex:1; text-align:center; font-size:0.75rem; padding:6px;">
                             Remove
                         </a>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
 }

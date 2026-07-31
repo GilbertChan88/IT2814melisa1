@@ -1,67 +1,54 @@
-﻿@page
+@page
 @model ArcaneVault_Web.Pages.CollectionItems.AvailableModel
 
 @{
-    ViewData["Title"] = "Available Items";
+    ViewData["Title"] = "Shop All Items";
 }
 
-<h2>Available Items</h2>
+<div class="page-header">
+    <h2>Shop All Items</h2>
+    <span class="text-muted-small">@Model.CatalogItemList.Count items available</span>
+</div>
 
-<p>
-    Select an item created by the administrator and add it to
-    your personal collection.
-</p>
-
-<form method="get" class="mb-3">
-    <div class="input-group">
-        <input asp-for="SearchString"
-               class="form-control"
-               placeholder="Search by item name or category..." />
-
-        <button type="submit" class="btn btn-primary">
-            Search
-        </button>
-
-        <a asp-page="Available"
-           class="btn btn-secondary">
-            Clear
-        </a>
+<!-- Search Bar -->
+<form method="get" class="mb-4">
+    <div class="search-form" style="max-width: 100%;">
+        <div class="input-group">
+            <input asp-for="SearchString"
+                   class="form-control"
+                   placeholder="Search by item name or category..." />
+            <button type="submit" class="btn btn-primary">Search</button>
+            <a asp-page="Available" class="btn btn-outline-secondary">Clear</a>
+        </div>
     </div>
 </form>
 
 @if (Model.CatalogItemList.Count == 0)
 {
-    <div class="alert alert-info">
-        No available items found.
+    <div class="alert-info" style="padding: 24px; text-align: center; border-radius: var(--radius-md);">
+        No available items found. Try a different search term.
     </div>
 }
 else
 {
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Item Name</th>
-                <th>Category</th>
-                <th>Action</th>
-            </tr>
-        </thead>
+    <div class="product-grid">
+        @foreach (var item in Model.CatalogItemList)
+        {
+            var src = string.IsNullOrWhiteSpace(item.ResolvedImageUrl)
+                ? Url.Content("~/images/product-placeholder.png")
+                : item.ResolvedImageUrl;
 
-        <tbody>
-            @foreach (var item in Model.CatalogItemList)
-            {
-                <tr>
-                    <td>@item.ItemName</td>
-                    <td>@item.CategoryName</td>
-
-                    <td>
-                        <a asp-page="Add"
-                           asp-route-id="@item.CatalogItemId"
-                           class="btn btn-success">
-                            Add to Collection
-                        </a>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+            <div class="product-card">
+                <div class="badge-stock">In Stock</div>
+                <img src="@src" alt="@item.ItemName" />
+                <div class="card-body">
+                    <div class="title">@item.ItemName</div>
+                    <div class="meta">@(item.CategoryName ?? "Uncategorized")</div>
+                    <a asp-page="Add"
+                       asp-route-id="@item.CatalogItemId"
+                       class="btn-add">+ Add to Collection</a>
+                </div>
+            </div>
+        }
+    </div>
 }

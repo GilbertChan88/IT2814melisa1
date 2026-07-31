@@ -1,0 +1,20 @@
+@page
+@model ArcaneVault_Web.Pages.SellWithUs.SuccessModel
+
+@{
+    ViewData["Title"] = "Item Submitted";
+}
+
+<div style="text-align: center; padding: 60px 20px;">
+    <div style="font-size: 3rem; margin-bottom: 16px;">&#x2705;</div>
+    <h2 style="margin-bottom: 12px;">Item Submitted Successfully!</h2>
+    <p style="color: var(--text-secondary); max-width: 480px; margin: 0 auto 24px;">
+        Thank you for listing with ArcaneVault. Your item has been added to the catalog
+        and is now visible to collectors browsing our store.
+    </p>
+    <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <a asp-page="/SellWithUs/Index" class="btn btn-accent">List Another Item</a>
+        <a asp-page="/CollectionItems/Available" class="btn btn-outline-secondary">Browse Catalog</a>
+        <a asp-page="/Index" class="btn btn-outline-secondary">Back to Home</a>
+    </div>
+</div>
