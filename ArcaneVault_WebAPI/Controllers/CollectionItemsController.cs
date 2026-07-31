@@ -50,7 +50,17 @@ namespace ArcaneVault_WebAPI.Controllers
                     item.IsDeleted,
                     category.CategoryCode,
                     category.CategoryName,
-                    ImageUrl = catalog != null ? catalog.ImageUrl : null
+                    ImageUrl = catalog != null ? catalog.ImageUrl : null,
+                    Condition = (int)item.Condition,
+                    ConditionName = item.Condition.ToString(),
+                    item.PurchasePrice,
+                    // Fall back to the catalogue price when no explicit
+                    // valuation has been recorded for the holding.
+                    EstimatedValue = item.EstimatedValue
+                        ?? (catalog != null ? catalog.Price : (decimal?)null),
+                    item.AcquiredAt,
+                    item.Notes,
+                    item.CreatedAt
                 };
 
             return Ok(await collectionItems.ToListAsync());
@@ -89,7 +99,14 @@ namespace ArcaneVault_WebAPI.Controllers
                      item.UserName,
                      item.IsDeleted,
                      category.CategoryCode,
-                     category.CategoryName
+                     category.CategoryName,
+                     Condition = (int)item.Condition,
+                     ConditionName = item.Condition.ToString(),
+                     item.PurchasePrice,
+                     item.EstimatedValue,
+                     item.AcquiredAt,
+                     item.Notes,
+                     item.CreatedAt
                  }).FirstOrDefaultAsync();
 
             if (collectionItem == null)
@@ -136,7 +153,15 @@ namespace ArcaneVault_WebAPI.Controllers
                 StartingQuantity = model.Quantity,
                 CurrentQuantity = model.Quantity,
                 UserName = model.UserName,
-                IsDeleted = false
+                IsDeleted = false,
+                Condition = model.Condition,
+                PurchasePrice = model.PurchasePrice,
+                // Default the valuation to the catalogue price so collection
+                // worth is meaningful even without a manual estimate.
+                EstimatedValue = model.EstimatedValue ?? catalogItem.Price,
+                AcquiredAt = model.AcquiredAt ?? DateTime.UtcNow,
+                Notes = model.Notes,
+                CreatedAt = DateTime.UtcNow
             };
 
             _context.CollectionItems.Add(collectionItem);
@@ -186,6 +211,13 @@ namespace ArcaneVault_WebAPI.Controllers
 
             existingItem.CurrentQuantity =
                 collectionItem.CurrentQuantity;
+
+            // Grading and valuation are editable alongside quantity.
+            existingItem.Condition = collectionItem.Condition;
+            existingItem.PurchasePrice = collectionItem.PurchasePrice;
+            existingItem.EstimatedValue = collectionItem.EstimatedValue;
+            existingItem.AcquiredAt = collectionItem.AcquiredAt;
+            existingItem.Notes = collectionItem.Notes;
 
             await _context.SaveChangesAsync();
 
