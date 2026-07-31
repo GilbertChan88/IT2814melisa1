@@ -1,35 +1,266 @@
-﻿@page "{id:int}"
+@page
 @model ArcaneVault_Web.Pages.CatalogItems.DetailsModel
+@using ArcaneVault_Web.Models
 
 @{
-    ViewData["Title"] = "Item Details";
+    ViewData["Title"] = Model.CatalogItem?.ItemName ?? "Item";
+    var currentUser = Model.CurrentUserName;
 }
 
-<h2>Item Details</h2>
+@if (!string.IsNullOrEmpty(Model.StatusMessage))
+{
+    <div class="alert-success" role="status">@Model.StatusMessage</div>
+}
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert-danger" role="alert">@Model.ErrorMessage</div>
+}
 
-<table class="table table-bordered">
-    <tr>
-        <th>Item ID</th>
-        <td>@Model.CatalogItem?.CatalogItemId</td>
-    </tr>
+@if (Model.CatalogItem == null)
+{
+    <div class="empty-state">
+        <div class="empty-icon">&#9888;</div>
+        <strong>Item not found</strong>
+        <p>This listing may have been removed.</p>
+        <a asp-page="/CollectionItems/Available" class="btn btn-primary">Back to shop</a>
+    </div>
+}
+else
+{
+    var item = Model.CatalogItem;
+    var imageSrc = item.ResolvedImageUrl ?? Url.Content("~/images/product-placeholder.png");
 
-    <tr>
-        <th>Item Name</th>
-        <td>@Model.CatalogItem?.ItemName</td>
-    </tr>
+    <nav class="breadcrumb-bar">
+        <a asp-page="/CollectionItems/Available">Shop</a>
+        <span class="crumb-sep">/</span>
+        <span>@(item.CategoryName ?? item.CategoryCode)</span>
+    </nav>
 
-    <tr>
-        <th>Category</th>
-        <td>@Model.CatalogItem?.CategoryName</td>
-    </tr>
-</table>
+    <div class="detail-layout">
+        <div class="detail-media">
+            <img src="@imageSrc" alt="@item.ItemName" />
+        </div>
 
-<a asp-page="Edit"
-   asp-route-id="@Model.CatalogItem?.CatalogItemId"
-   class="btn btn-warning">
-    Edit
-</a>
+        <div class="detail-info">
+            <h2 class="detail-title">@item.ItemName</h2>
 
-<a asp-page="Index" class="btn btn-secondary">
-    Back
-</a>
+            <div class="detail-meta-row">
+                <span class="category-pill">@(item.CategoryName ?? item.CategoryCode)</span>
+                @await Html.PartialAsync("_StarRating", new StarRatingViewModel { Rating = item.AverageRating, ReviewCount = item.ReviewCount, ShowEmptyText = true })
+            </div>
+
+            <div class="detail-price">@item.Price.ToString("C")</div>
+
+            <div class="detail-stock">
+                @if (item.InStock)
+                {
+                    <span class="pill pill-success">In stock</span>
+                    <span class="text-muted-small">@item.StockQuantity available</span>
+                }
+                else
+                {
+                    <span class="pill pill-muted">Out of stock</span>
+                    <span class="text-muted-small">
+                        Add it to your wishlist to be alerted when it returns.
+                    </span>
+                }
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(item.Description))
+            {
+                <p class="detail-description">@item.Description</p>
+            }
+
+            <div class="detail-actions">
+                @if (item.InStock)
+                {
+                    <form method="post" asp-page-handler="AddToCart" asp-route-id="@item.CatalogItemId"
+                          class="detail-cart-form">
+                        <label class="visually-hidden" for="detail-qty">Quantity</label>
+                        <input id="detail-qty" name="quantity" type="number" class="form-control qty-input"
+                               value="1" min="1" max="@item.StockQuantity" />
+                        <button type="submit" class="btn btn-accent">Add to cart</button>
+                    </form>
+                }
+
+                <form method="post" asp-page-handler="ToggleWishlist" asp-route-id="@item.CatalogItemId">
+                    <input type="hidden" name="isSaved"
+                           value="@Model.IsInWishlist.ToString().ToLowerInvariant()" />
+                    <button type="submit"
+                            class="btn @(Model.IsInWishlist ? "btn-info" : "btn-outline-secondary")">
+                        @(Model.IsInWishlist ? "♥ Saved" : "♡ Save to wishlist")
+                    </button>
+                </form>
+
+                <a asp-page="/CollectionItems/Add" asp-route-id="@item.CatalogItemId"
+                   class="btn btn-outline-secondary">+ Add to collection</a>
+            </div>
+
+            <dl class="detail-facts">
+                <div>
+                    <dt>Views</dt>
+                    <dd>@item.ViewCount</dd>
+                </div>
+                <div>
+                    <dt>Listed</dt>
+                    <dd>@item.CreatedAt.ToLocalTime().ToString("d MMM yyyy")</dd>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(item.SubmittedBy))
+                {
+                    <div>
+                        <dt>Seller</dt>
+                        <dd>@item.SubmittedBy</dd>
+                    </div>
+                }
+            </dl>
+        </div>
+    </div>
+
+    <!-- Reviews -->
+    <section class="review-section mt-section">
+        <div class="section-heading">
+            <h3>Customer Reviews</h3>
+        </div>
+
+        <div class="review-layout">
+            <aside class="review-summary-panel">
+                <div class="review-score">
+                    <div class="review-score-value">
+                        @(Model.Reviews.ReviewCount == 0
+                            ? "&ndash;"
+                            : Model.Reviews.AverageRating.ToString("0.0"))
+                    </div>
+                    @await Html.PartialAsync("_StarRating", new StarRatingViewModel { Rating = Model.Reviews.AverageRating, ReviewCount = Model.Reviews.ReviewCount, ShowCount = false })
+                    <div class="text-muted-small">
+                        @Model.Reviews.ReviewCount
+                        @(Model.Reviews.ReviewCount == 1 ? "review" : "reviews")
+                    </div>
+                </div>
+
+                <div class="rating-bars">
+                    @for (var star = 5; star >= 1; star--)
+                    {
+                        Model.Reviews.RatingCounts.TryGetValue(star, out var starCount);
+                        var percent = Model.Reviews.PercentFor(star);
+
+                        <div class="rating-bar-row">
+                            <span class="rating-bar-label">@star&#9733;</span>
+                            <span class="rating-bar-track">
+                                <span class="rating-bar-fill" style="width:@percent.ToString(System.Globalization.CultureInfo.InvariantCulture)%"></span>
+                            </span>
+                            <span class="rating-bar-count">@starCount</span>
+                        </div>
+                    }
+                </div>
+            </aside>
+
+            <div class="review-main">
+                <!-- Write / edit review -->
+                <div class="review-form-card">
+                    <h4>@(Model.MyReview == null ? "Write a review" : "Edit your review")</h4>
+
+                    <form method="post" asp-page-handler="Review" asp-route-id="@item.CatalogItemId">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                        <input type="hidden" asp-for="ReviewInput.CatalogItemId" />
+
+                        <div class="mb-3">
+                            <label asp-for="ReviewInput.Rating" class="form-label"></label>
+                            <select asp-for="ReviewInput.Rating" class="form-select rating-select">
+                                <option value="5">5 &ndash; Excellent</option>
+                                <option value="4">4 &ndash; Good</option>
+                                <option value="3">3 &ndash; Average</option>
+                                <option value="2">2 &ndash; Poor</option>
+                                <option value="1">1 &ndash; Terrible</option>
+                            </select>
+                            <span asp-validation-for="ReviewInput.Rating" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="ReviewInput.Title" class="form-label"></label>
+                            <input asp-for="ReviewInput.Title" class="form-control"
+                                   placeholder="Sum it up in a line" />
+                            <span asp-validation-for="ReviewInput.Title" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="ReviewInput.Comment" class="form-label"></label>
+                            <textarea asp-for="ReviewInput.Comment" class="form-control" rows="4"
+                                      placeholder="What did you think of the item and its condition?"></textarea>
+                            <span asp-validation-for="ReviewInput.Comment" class="text-danger"></span>
+                        </div>
+
+                        <div class="review-form-actions">
+                            <button type="submit" class="btn btn-accent">
+                                @(Model.MyReview == null ? "Post review" : "Update review")
+                            </button>
+
+                            @if (Model.MyReview != null)
+                            {
+                                <button type="submit" class="btn btn-danger"
+                                        asp-page-handler="DeleteReview"
+                                        asp-route-id="@item.CatalogItemId"
+                                        name="reviewId" value="@Model.MyReview.ReviewId">
+                                    Delete my review
+                                </button>
+                            }
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Existing reviews -->
+                @if (Model.Reviews.Reviews.Count == 0)
+                {
+                    <div class="empty-state empty-state-compact">
+                        <strong>No reviews yet</strong>
+                        <p>Be the first to share your thoughts on this item.</p>
+                    </div>
+                }
+                else
+                {
+                    <ul class="review-list">
+                        @foreach (var review in Model.Reviews.Reviews)
+                        {
+                            var isMine = string.Equals(
+                                review.UserName, currentUser, StringComparison.OrdinalIgnoreCase);
+
+                            <li class="review-item @(isMine ? "is-mine" : "")">
+                                <div class="review-item-header">
+                                    <div>
+                                        <span class="review-author">@review.UserName</span>
+                                        @if (isMine)
+                                        {
+                                            <span class="pill pill-muted">You</span>
+                                        }
+                                    </div>
+                                    @await Html.PartialAsync("_StarRating", new StarRatingViewModel { Rating = review.Rating, ReviewCount = 1, ShowCount = false })
+                                </div>
+
+                                @if (!string.IsNullOrWhiteSpace(review.Title))
+                                {
+                                    <div class="review-title">@review.Title</div>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(review.Comment))
+                                {
+                                    <p class="review-comment">@review.Comment</p>
+                                }
+
+                                <div class="review-date text-muted-small">
+                                    @review.CreatedAt.ToLocalTime().ToString("d MMM yyyy")
+                                    @if (review.UpdatedAt.HasValue)
+                                    {
+                                        <span> &middot; edited</span>
+                                    }
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
