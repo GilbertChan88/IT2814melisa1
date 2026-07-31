@@ -1,0 +1,101 @@
+@model ArcaneVault_Web.Models.TradeOffer
+
+<article class="trade-card">
+    <header class="trade-card-header">
+        <div>
+            <h4 class="trade-parties">
+                @Model.FromUserName
+                <span class="trade-arrow">&rarr;</span>
+                @Model.ToUserName
+            </h4>
+            <div class="text-muted-small">
+                @Model.CreatedAt.ToLocalTime().ToString("d MMM yyyy, HH:mm")
+                @if (Model.RespondedAt.HasValue)
+                {
+                    <span>
+                        &middot; answered
+                        @Model.RespondedAt.Value.ToLocalTime().ToString("d MMM yyyy")
+                    </span>
+                }
+            </div>
+        </div>
+        <span class="pill @Model.StatusCssClass">@Model.StatusName</span>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <blockquote class="trade-message">@Model.Message</blockquote>
+    }
+
+    <div class="trade-columns">
+        <div class="trade-column">
+            <div class="trade-column-title">
+                Offering
+                <span class="trade-column-value">@Model.OfferedValue.ToString("C")</span>
+            </div>
+            @if (Model.OfferedItems.Count == 0)
+            {
+                <div class="text-muted-small">Nothing offered</div>
+            }
+            else
+            {
+                <ul class="trade-item-list">
+                    @foreach (var line in Model.OfferedItems)
+                    {
+                        <li>
+                            <img src="@(line.ResolvedImageUrl ?? Url.Content("~/images/product-placeholder.png"))"
+                                 alt="@line.ItemName" loading="lazy" />
+                            <span class="trade-item-name">@line.ItemName</span>
+                            <span class="trade-item-qty">&times;@line.Quantity</span>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+
+        <div class="trade-swap-icon" aria-hidden="true">&#8646;</div>
+
+        <div class="trade-column">
+            <div class="trade-column-title">
+                Requesting
+                <span class="trade-column-value">@Model.RequestedValue.ToString("C")</span>
+            </div>
+            @if (Model.RequestedItems.Count == 0)
+            {
+                <div class="text-muted-small">Nothing requested</div>
+            }
+            else
+            {
+                <ul class="trade-item-list">
+                    @foreach (var line in Model.RequestedItems)
+                    {
+                        <li>
+                            <img src="@(line.ResolvedImageUrl ?? Url.Content("~/images/product-placeholder.png"))"
+                                 alt="@line.ItemName" loading="lazy" />
+                            <span class="trade-item-name">@line.ItemName</span>
+                            <span class="trade-item-qty">&times;@line.Quantity</span>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+
+    @if (Model.ValueDifference != 0)
+    {
+        <footer class="trade-balance">
+            @if (Model.ValueDifference > 0)
+            {
+                <span class="balance-positive">
+                    Proposer is giving @Model.ValueDifference.ToString("C") more in value
+                </span>
+            }
+            else
+            {
+                <span class="balance-negative">
+                    Proposer is asking for @Math.Abs(Model.ValueDifference).ToString("C") more in value
+                </span>
+            }
+        </footer>
+    }
+</article>

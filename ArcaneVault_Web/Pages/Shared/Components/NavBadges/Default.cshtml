@@ -1,0 +1,34 @@
+@model ArcaneVault_Web.Pages.Shared.Components.NavBadges.NavBadgesViewModel
+
+@*
+    Rendered inside the header actions area. Only the links that make sense for
+    the current user are drawn.
+*@
+<a asp-page="/Notifications/Index" class="icon-link"
+   title="Notifications" aria-label="Notifications">
+    <span aria-hidden="true">&#128276;</span>
+    @if (Model.UnreadNotifications > 0)
+    {
+        <span class="icon-badge">@Model.UnreadNotifications</span>
+    }
+</a>
+
+<a asp-page="/Wishlist/Index" class="icon-link" title="Wishlist" aria-label="Wishlist">
+    <span aria-hidden="true">&#9825;</span>
+</a>
+
+<a asp-page="/Trades/Index" class="icon-link" title="Trades" aria-label="Trades">
+    <span aria-hidden="true">&#8646;</span>
+    @if (Model.PendingTrades > 0)
+    {
+        <span class="icon-badge">@Model.PendingTrades</span>
+    }
+</a>
+
+<a asp-page="/Cart/Index" class="icon-link" title="Cart" aria-label="Shopping cart">
+    <span aria-hidden="true">&#128722;</span>
+    @if (Model.CartCount > 0)
+    {
+        <span class="icon-badge icon-badge-accent">@Model.CartCount</span>
+    }
+</a>

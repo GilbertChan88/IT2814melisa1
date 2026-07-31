@@ -1,54 +1,218 @@
 @page
 @model ArcaneVault_Web.Pages.CollectionItems.AvailableModel
+@using ArcaneVault_Web.Models
 
 @{
     ViewData["Title"] = "Shop All Items";
 }
 
 <div class="page-header">
-    <h2>Shop All Items</h2>
-    <span class="text-muted-small">@Model.CatalogItemList.Count items available</span>
+    <div>
+        <h2>Shop All Items</h2>
+        <p class="page-subtitle">
+            Every listing is in stock and ships within 1&ndash;3 business days.
+        </p>
+    </div>
 </div>
 
-<!-- Search Bar -->
-<form method="get" class="mb-4">
-    <div class="search-form" style="max-width: 100%;">
-        <div class="input-group">
-            <input asp-for="SearchString"
-                   class="form-control"
-                   placeholder="Search by item name or category..." />
-            <button type="submit" class="btn btn-primary">Search</button>
-            <a asp-page="Available" class="btn btn-outline-secondary">Clear</a>
+@if (!string.IsNullOrEmpty(Model.StatusMessage))
+{
+    <div class="alert-success" role="status">@Model.StatusMessage</div>
+}
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert-danger" role="alert">@Model.ErrorMessage</div>
+}
+
+<!-- Filter panel -->
+<form method="get" class="filter-panel">
+    <input type="hidden" name="PageNumber" value="1" />
+    <input type="hidden" name="PageSize" value="@Model.PageSize" />
+
+    <div class="filter-row">
+        <div class="filter-field filter-search">
+            <label asp-for="SearchString" class="form-label">Search</label>
+            <input asp-for="SearchString" name="Search" class="form-control"
+                   placeholder="Item name or description&hellip;" />
+        </div>
+
+        <div class="filter-field">
+            <label asp-for="CategoryCode" class="form-label">Category</label>
+            <select asp-for="CategoryCode" class="form-select">
+                <option value="">All categories</option>
+                @foreach (var category in Model.CategoryList)
+                {
+                    <option value="@category.CategoryCode">@category.CategoryName</option>
+                }
+            </select>
+        </div>
+
+        <div class="filter-field filter-price">
+            <label class="form-label">
+                Price range
+                @if (Model.CatalogMaxPrice > 0)
+                {
+                    <span class="filter-hint">
+                        (@Model.CatalogMinPrice.ToString("C0") &ndash; @Model.CatalogMaxPrice.ToString("C0"))
+                    </span>
+                }
+            </label>
+            <div class="price-inputs">
+                <input asp-for="MinPrice" class="form-control" type="number"
+                       step="0.01" min="0" placeholder="Min" aria-label="Minimum price" />
+                <span class="price-sep">&ndash;</span>
+                <input asp-for="MaxPrice" class="form-control" type="number"
+                       step="0.01" min="0" placeholder="Max" aria-label="Maximum price" />
+            </div>
+        </div>
+
+        <div class="filter-field">
+            <label asp-for="Sort" class="form-label">Sort by</label>
+            <select asp-for="Sort" class="form-select">
+                @foreach (var (value, label) in ArcaneVault_Web.Pages.CollectionItems.AvailableModel.SortOptions)
+                {
+                    <option value="@value">@label</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    <div class="filter-actions">
+        <label class="checkbox-inline">
+            <input asp-for="InStockOnly" type="checkbox" />
+            <span>In stock only</span>
+        </label>
+
+        <div class="filter-buttons">
+            <button type="submit" class="btn btn-accent">Apply filters</button>
+            @if (Model.HasActiveFilters)
+            {
+                <a asp-page="Available" class="btn btn-outline-secondary">Clear all</a>
+            }
         </div>
     </div>
 </form>
 
-@if (Model.CatalogItemList.Count == 0)
+<!-- Result summary -->
+<div class="results-header">
+    <span class="results-count">
+        <strong>@Model.Results.TotalCount</strong>
+        @(Model.Results.TotalCount == 1 ? "item" : "items")
+        @if (Model.HasActiveFilters)
+        {
+            <span class="text-muted-small">matching your filters</span>
+        }
+    </span>
+</div>
+
+@if (Model.Results.Items.Count == 0)
 {
-    <div class="alert-info" style="padding: 24px; text-align: center; border-radius: var(--radius-md);">
-        No available items found. Try a different search term.
+    <div class="empty-state">
+        <div class="empty-icon">&#128269;</div>
+        <strong>No items found</strong>
+        <p>
+            @if (Model.HasActiveFilters)
+            {
+                <span>Try widening your price range or clearing some filters.</span>
+            }
+            else
+            {
+                <span>The catalogue is empty right now. Check back soon.</span>
+            }
+        </p>
+        @if (Model.HasActiveFilters)
+        {
+            <a asp-page="Available" class="btn btn-primary">Clear filters</a>
+        }
     </div>
 }
 else
 {
     <div class="product-grid">
-        @foreach (var item in Model.CatalogItemList)
+        @foreach (var item in Model.Results.Items)
         {
-            var src = string.IsNullOrWhiteSpace(item.ResolvedImageUrl)
-                ? Url.Content("~/images/product-placeholder.png")
-                : item.ResolvedImageUrl;
+            var isSaved = Model.WishlistIds.Contains(item.CatalogItemId);
+            var imageSrc = item.ResolvedImageUrl
+                ?? Url.Content("~/images/product-placeholder.png");
 
-            <div class="product-card">
-                <div class="badge-stock">In Stock</div>
-                <img src="@src" alt="@item.ItemName" />
+            <article class="product-card">
+                @if (!item.InStock)
+                {
+                    <div class="badge-oos">Out of stock</div>
+                }
+                else
+                {
+                    <div class="badge-stock">In Stock</div>
+                }
+
+                <form method="post" asp-page-handler="ToggleWishlist" class="wishlist-toggle-form">
+                    <input type="hidden" name="catalogItemId" value="@item.CatalogItemId" />
+                    <input type="hidden" name="isSaved" value="@isSaved.ToString().ToLowerInvariant()" />
+                    @foreach (var pair in Model.RouteValuesForPage(Model.Results.Page))
+                    {
+                        if (!string.IsNullOrEmpty(pair.Value))
+                        {
+                            <input type="hidden" name="@pair.Key" value="@pair.Value" />
+                        }
+                    }
+                    <button type="submit"
+                            class="wishlist-toggle @(isSaved ? "saved" : "")"
+                            title="@(isSaved ? "Remove from wishlist" : "Save to wishlist")"
+                            aria-label="@(isSaved ? "Remove from wishlist" : "Save to wishlist")">
+                        @(isSaved ? "♥" : "♡")
+                    </button>
+                </form>
+
+                <a asp-page="/CatalogItems/Details" asp-route-id="@item.CatalogItemId"
+                   class="product-image-link">
+                    <img src="@imageSrc" alt="@item.ItemName" loading="lazy" />
+                </a>
+
                 <div class="card-body">
-                    <div class="title">@item.ItemName</div>
-                    <div class="meta">@(item.CategoryName ?? "Uncategorized")</div>
-                    <a asp-page="Add"
-                       asp-route-id="@item.CatalogItemId"
-                       class="btn-add">+ Add to Collection</a>
+                    <a asp-page="/CatalogItems/Details" asp-route-id="@item.CatalogItemId"
+                       class="title-link">
+                        <div class="title">@item.ItemName</div>
+                    </a>
+                    <div class="meta">@(item.CategoryName ?? item.CategoryCode)</div>
+
+                    @await Html.PartialAsync("_StarRating", new StarRatingViewModel { Rating = item.AverageRating, ReviewCount = item.ReviewCount })
+
+                    <div class="price-row">
+                        <span class="price">@item.Price.ToString("C")</span>
+                        @if (item.InStock && item.StockQuantity <= 5)
+                        {
+                            <span class="stock-warning">Only @item.StockQuantity left</span>
+                        }
+                    </div>
+
+                    <div class="card-actions">
+                        @if (item.InStock)
+                        {
+                            <form method="post" asp-page-handler="AddToCart">
+                                <input type="hidden" name="catalogItemId" value="@item.CatalogItemId" />
+                                <input type="hidden" name="quantity" value="1" />
+                                @foreach (var pair in Model.RouteValuesForPage(Model.Results.Page))
+                                {
+                                    if (!string.IsNullOrEmpty(pair.Value))
+                                    {
+                                        <input type="hidden" name="@pair.Key" value="@pair.Value" />
+                                    }
+                                }
+                                <button type="submit" class="btn-add">Add to Cart</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn-add disabled" disabled>Sold Out</button>
+                        }
+
+                        <a asp-page="Add" asp-route-id="@item.CatalogItemId"
+                           class="btn-secondary-action">+ Collection</a>
+                    </div>
                 </div>
-            </div>
+            </article>
         }
     </div>
+
+    @await Html.PartialAsync("_Pagination", new PaginationViewModel { CurrentPage = Model.Results.Page, TotalPages = Model.Results.TotalPages, TotalCount = Model.Results.TotalCount, FirstItemOnPage = Model.Results.FirstItemOnPage, LastItemOnPage = Model.Results.LastItemOnPage, PageName = "/CollectionItems/Available", RouteValues = Model.RouteValuesForPage(1) })
 }

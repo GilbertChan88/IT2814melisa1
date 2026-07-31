@@ -1,0 +1,154 @@
+@page
+@model ArcaneVault_Web.Pages.Admin.SubmissionsModel
+
+@{
+    ViewData["Title"] = "Approval Queue";
+}
+
+<div class="page-header">
+    <div>
+        <h2>Approval Queue</h2>
+        <p class="page-subtitle">
+            Seller submissions stay hidden from the shop until you approve them.
+        </p>
+    </div>
+    @if (Model.PendingCount > 0)
+    {
+        <span class="pill pill-warning pill-lg">
+            @Model.PendingCount awaiting review
+        </span>
+    }
+</div>
+
+@if (!string.IsNullOrEmpty(Model.StatusMessage))
+{
+    <div class="alert-success" role="status">@Model.StatusMessage</div>
+}
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert-danger" role="alert">@Model.ErrorMessage</div>
+}
+
+<div class="tab-bar">
+    @foreach (var (value, label) in ArcaneVault_Web.Pages.Admin.SubmissionsModel.StatusTabs)
+    {
+        <a asp-page="Submissions" asp-route-StatusFilter="@value"
+           class="tab-link @(Model.StatusFilter == value ? "active" : "")">
+            @label
+            @if (value == 0 && Model.PendingCount > 0)
+            {
+                <span class="tab-badge">@Model.PendingCount</span>
+            }
+        </a>
+    }
+</div>
+
+@if (Model.Submissions.Count == 0)
+{
+    <div class="empty-state">
+        <div class="empty-icon">&#128203;</div>
+        <strong>Nothing here</strong>
+        <p>
+            @(Model.StatusFilter == 0
+                ? "No submissions are waiting for review."
+                : "No submissions with this status.")
+        </p>
+    </div>
+}
+else
+{
+    <div class="submission-list">
+        @foreach (var submission in Model.Submissions)
+        {
+            var imageSrc = submission.ResolvedImageUrl
+                ?? Url.Content("~/images/product-placeholder.png");
+
+            <article class="submission-card">
+                <div class="submission-main">
+                    <img src="@imageSrc" alt="@submission.ItemName"
+                         class="submission-thumb" loading="lazy" />
+
+                    <div class="submission-info">
+                        <div class="submission-header">
+                            <h3 class="submission-title">@submission.ItemName</h3>
+                            <span class="pill @submission.StatusCssClass">
+                                @submission.StatusName
+                            </span>
+                        </div>
+
+                        <div class="submission-meta">
+                            <span class="category-pill">
+                                @(submission.CategoryName ?? submission.CategoryCode)
+                            </span>
+                            <span class="price">@submission.Price.ToString("C")</span>
+                            <span class="text-muted-small">
+                                Stock: @submission.StockQuantity
+                            </span>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(submission.Description))
+                        {
+                            <p class="submission-description">@submission.Description</p>
+                        }
+
+                        <dl class="submission-facts">
+                            <div>
+                                <dt>Seller</dt>
+                                <dd>@(submission.SubmittedBy ?? "Unknown")</dd>
+                            </div>
+                            @if (submission.SubmittedAt.HasValue)
+                            {
+                                <div>
+                                    <dt>Submitted</dt>
+                                    <dd>@submission.SubmittedAt.Value.ToLocalTime().ToString("d MMM yyyy, HH:mm")</dd>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(submission.ReviewedBy))
+                            {
+                                <div>
+                                    <dt>Reviewed by</dt>
+                                    <dd>@submission.ReviewedBy</dd>
+                                </div>
+                            }
+                        </dl>
+
+                        @if (!string.IsNullOrWhiteSpace(submission.RejectionReason))
+                        {
+                            <div class="rejection-note">
+                                <strong>Rejection reason:</strong>
+                                @submission.RejectionReason
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                @if (submission.IsPending)
+                {
+                    <div class="submission-actions">
+                        <form method="post" asp-page-handler="Approve">
+                            <input type="hidden" name="catalogItemId"
+                                   value="@submission.CatalogItemId" />
+                            <input type="hidden" name="StatusFilter" value="@Model.StatusFilter" />
+                            <button type="submit" class="btn btn-success">
+                                &#10003; Approve &amp; publish
+                            </button>
+                        </form>
+
+                        <form method="post" asp-page-handler="Reject" class="reject-form">
+                            <input type="hidden" name="catalogItemId"
+                                   value="@submission.CatalogItemId" />
+                            <input type="hidden" name="StatusFilter" value="@Model.StatusFilter" />
+                            <label class="visually-hidden" for="reason-@submission.CatalogItemId">
+                                Reason for rejection
+                            </label>
+                            <input id="reason-@submission.CatalogItemId" name="reason"
+                                   class="form-control" required
+                                   placeholder="Reason the seller should see&hellip;" />
+                            <button type="submit" class="btn btn-danger">Reject</button>
+                        </form>
+                    </div>
+                }
+            </article>
+        }
+    </div>
+}

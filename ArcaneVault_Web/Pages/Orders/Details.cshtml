@@ -1,0 +1,107 @@
+@page
+@model ArcaneVault_Web.Pages.Orders.DetailsModel
+
+@{
+    ViewData["Title"] = Model.Order != null ? $"Order #{Model.Order.OrderId}" : "Order";
+}
+
+@if (!string.IsNullOrEmpty(Model.StatusMessage))
+{
+    <div class="alert-success" role="status">@Model.StatusMessage</div>
+}
+
+@if (Model.Order == null)
+{
+    <div class="empty-state">
+        <div class="empty-icon">&#9888;</div>
+        <strong>Order unavailable</strong>
+        <p>@(Model.ErrorMessage ?? "That order could not be found.")</p>
+        <a asp-page="Index" class="btn btn-primary">Back to orders</a>
+    </div>
+}
+else
+{
+    var order = Model.Order;
+
+    <div class="page-header">
+        <div>
+            <h2>Order #@order.OrderId</h2>
+            <p class="page-subtitle">
+                Placed @order.OrderDate.ToLocalTime().ToString("d MMMM yyyy 'at' HH:mm")
+            </p>
+        </div>
+        <a asp-page="Index" class="btn btn-outline-secondary">Back to orders</a>
+    </div>
+
+    <div class="order-detail-status">
+        <span class="pill @order.StatusCssClass">@order.StatusName</span>
+        <span class="text-muted-small">
+            @order.TotalUnits @(order.TotalUnits == 1 ? "unit" : "units")
+            across @order.Items.Count
+            @(order.Items.Count == 1 ? "line" : "lines")
+        </span>
+    </div>
+
+    <div class="cart-layout">
+        <div class="cart-lines">
+            @foreach (var line in order.Items)
+            {
+                var imageSrc = line.ResolvedImageUrl
+                    ?? Url.Content("~/images/product-placeholder.png");
+
+                <article class="cart-row">
+                    <a asp-page="/CatalogItems/Details" asp-route-id="@line.CatalogItemId"
+                       class="cart-thumb">
+                        <img src="@imageSrc" alt="@line.ItemName" loading="lazy" />
+                    </a>
+
+                    <div class="cart-info">
+                        <a asp-page="/CatalogItems/Details" asp-route-id="@line.CatalogItemId"
+                           class="title-link">
+                            <h3 class="cart-title">@line.ItemName</h3>
+                        </a>
+                        <div class="text-muted-small">
+                            @line.UnitPrice.ToString("C") each &times; @line.Quantity
+                        </div>
+                    </div>
+
+                    <div class="cart-line-total">@line.LineTotal.ToString("C")</div>
+                </article>
+            }
+        </div>
+
+        <aside class="cart-summary">
+            <h3>Shipping to</h3>
+            <address class="shipping-address">
+                <strong>@order.ShippingName</strong><br />
+                @order.ShippingAddress<br />
+                @if (!string.IsNullOrWhiteSpace(order.ShippingCity))
+                {
+                    @order.ShippingCity<text> </text>
+                }
+                @order.ShippingPostalCode<br />
+                @order.ShippingCountry
+            </address>
+
+            <dl class="summary-list">
+                <div>
+                    <dt>Units</dt>
+                    <dd>@order.TotalUnits</dd>
+                </div>
+                <div>
+                    <dt>Status</dt>
+                    <dd>@order.StatusName</dd>
+                </div>
+            </dl>
+
+            <div class="summary-total">
+                <span>Total paid</span>
+                <strong>@order.TotalAmount.ToString("C")</strong>
+            </div>
+
+            <p class="text-muted-small summary-note">
+                Item names and prices are recorded as they were at purchase time.
+            </p>
+        </aside>
+    </div>
+}

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ArcaneVault_WebAPI.Models
@@ -8,7 +8,7 @@ namespace ArcaneVault_WebAPI.Models
         [Key]
         public int ItemId { get; set; }
 
-        public string ItemName { get; set; }
+        public string ItemName { get; set; } = string.Empty;
 
         public bool IsDeleted { get; set; }
 
@@ -22,8 +22,29 @@ namespace ArcaneVault_WebAPI.Models
         public CatalogItem? CatalogItem { get; set; }
 
         [ForeignKey("ArcaneVaultUser")]
-        public string UserName { get; set; }
+        public string UserName { get; set; } = string.Empty;
 
         public ArcaneVaultUser? ArcaneVaultUser { get; set; }
+
+        // ---- Valuation & grading ----
+
+        public ItemCondition Condition { get; set; } = ItemCondition.NearMint;
+
+        /// <summary>What the collector paid per unit.</summary>
+        [Range(0, 1000000)]
+        public decimal? PurchasePrice { get; set; }
+
+        /// <summary>
+        /// Current per-unit value. When null, the linked catalogue item's
+        /// price is used as a fallback for collection worth calculations.
+        /// </summary>
+        [Range(0, 1000000)]
+        public decimal? EstimatedValue { get; set; }
+
+        public DateTime? AcquiredAt { get; set; }
+
+        public string? Notes { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

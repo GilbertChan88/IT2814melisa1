@@ -1,0 +1,125 @@
+@page
+@model ArcaneVault_Web.Pages.SellWithUs.MyListingsModel
+
+@{
+    ViewData["Title"] = "My Listings";
+}
+
+<div class="page-header">
+    <div>
+        <h2>My Listings</h2>
+        <p class="page-subtitle">
+            Items you've submitted and where they are in review.
+        </p>
+    </div>
+    <a asp-page="Index" class="btn btn-accent">List another item</a>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.StatusMessage))
+{
+    <div class="alert-success" role="status">@Model.StatusMessage</div>
+}
+
+@if (Model.Listings.Count == 0)
+{
+    <div class="empty-state">
+        <div class="empty-icon">&#127991;</div>
+        <strong>You haven't listed anything yet</strong>
+        <p>Sell your spare collectibles to other collectors on ArcaneVault.</p>
+        <a asp-page="Index" class="btn btn-primary">List an item</a>
+    </div>
+}
+else
+{
+    <div class="stats-bar">
+        <div class="stat-card">
+            <div class="stat-number">@Model.Listings.Count</div>
+            <div class="stat-label">Submitted</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">@Model.PendingCount</div>
+            <div class="stat-label">In review</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">@Model.ApprovedCount</div>
+            <div class="stat-label">Live</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">@Model.RejectedCount</div>
+            <div class="stat-label">Rejected</div>
+        </div>
+    </div>
+
+    <div class="submission-list">
+        @foreach (var listing in Model.Listings)
+        {
+            var imageSrc = listing.ResolvedImageUrl
+                ?? Url.Content("~/images/product-placeholder.png");
+
+            <article class="submission-card">
+                <div class="submission-main">
+                    <img src="@imageSrc" alt="@listing.ItemName"
+                         class="submission-thumb" loading="lazy" />
+
+                    <div class="submission-info">
+                        <div class="submission-header">
+                            <h3 class="submission-title">
+                                @if (listing.Status == 1)
+                                {
+                                    <a asp-page="/CatalogItems/Details"
+                                       asp-route-id="@listing.CatalogItemId"
+                                       class="title-link">@listing.ItemName</a>
+                                }
+                                else
+                                {
+                                    @listing.ItemName
+                                }
+                            </h3>
+                            <span class="pill @listing.StatusCssClass">@listing.StatusName</span>
+                        </div>
+
+                        <div class="submission-meta">
+                            <span class="category-pill">
+                                @(listing.CategoryName ?? listing.CategoryCode)
+                            </span>
+                            <span class="price">@listing.Price.ToString("C")</span>
+                            <span class="text-muted-small">Stock: @listing.StockQuantity</span>
+                        </div>
+
+                        @if (listing.SubmittedAt.HasValue)
+                        {
+                            <div class="text-muted-small">
+                                Submitted @listing.SubmittedAt.Value.ToLocalTime().ToString("d MMM yyyy")
+                                @if (listing.ReviewedAt.HasValue)
+                                {
+                                    <span>
+                                        &middot; reviewed
+                                        @listing.ReviewedAt.Value.ToLocalTime().ToString("d MMM yyyy")
+                                    </span>
+                                }
+                            </div>
+                        }
+
+                        @if (listing.Status == 0)
+                        {
+                            <div class="review-pending-note">
+                                An admin is reviewing this listing. It isn't visible
+                                in the shop yet.
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(listing.RejectionReason))
+                        {
+                            <div class="rejection-note">
+                                <strong>Not approved:</strong> @listing.RejectionReason
+                                <div class="text-muted-small">
+                                    Fix the issue and submit the item again.
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </article>
+        }
+    </div>
+}

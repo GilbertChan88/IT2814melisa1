@@ -1,0 +1,116 @@
+@page
+@model ArcaneVault_Web.Pages.Trades.IndexModel
+
+@{
+    ViewData["Title"] = "Trades";
+}
+
+<div class="page-header">
+    <div>
+        <h2>Trades</h2>
+        <p class="page-subtitle">
+            Swap items with other collectors. Accepting an offer moves the units
+            between both collections straight away.
+        </p>
+    </div>
+    <a asp-page="Create" class="btn btn-accent">Propose a trade</a>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.StatusMessage))
+{
+    <div class="alert-success" role="status">@Model.StatusMessage</div>
+}
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert-danger" role="alert">@Model.ErrorMessage</div>
+}
+
+<div class="stats-bar">
+    <div class="stat-card">
+        <div class="stat-number">@Model.PendingIncomingCount</div>
+        <div class="stat-label">Awaiting your reply</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">@Model.PendingOutgoingCount</div>
+        <div class="stat-label">Awaiting theirs</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">@(Model.Incoming.Count + Model.Outgoing.Count)</div>
+        <div class="stat-label">Total offers</div>
+    </div>
+</div>
+
+<section class="mt-section">
+    <div class="section-heading">
+        <h3>Incoming offers</h3>
+    </div>
+
+    @if (Model.Incoming.Count == 0)
+    {
+        <div class="empty-state empty-state-compact">
+            <strong>No incoming offers</strong>
+            <p>When another collector proposes a swap it'll appear here.</p>
+        </div>
+    }
+    else
+    {
+        <div class="trade-list">
+            @foreach (var offer in Model.Incoming)
+            {
+                <partial name="_TradeOfferCard" model="offer" />
+
+                @if (offer.IsPending)
+                {
+                    <div class="trade-actions">
+                        <form method="post" asp-page-handler="Accept">
+                            <input type="hidden" name="tradeOfferId" value="@offer.TradeOfferId" />
+                            <button type="submit" class="btn btn-success">
+                                &#10003; Accept trade
+                            </button>
+                        </form>
+                        <form method="post" asp-page-handler="Decline">
+                            <input type="hidden" name="tradeOfferId" value="@offer.TradeOfferId" />
+                            <button type="submit" class="btn btn-danger">Decline</button>
+                        </form>
+                    </div>
+                }
+            }
+        </div>
+    }
+</section>
+
+<section class="mt-section mb-section">
+    <div class="section-heading">
+        <h3>Offers you've sent</h3>
+    </div>
+
+    @if (Model.Outgoing.Count == 0)
+    {
+        <div class="empty-state empty-state-compact">
+            <strong>You haven't sent any offers</strong>
+            <p>Find a collector holding something you want and propose a swap.</p>
+            <a asp-page="Create" class="btn btn-primary">Propose a trade</a>
+        </div>
+    }
+    else
+    {
+        <div class="trade-list">
+            @foreach (var offer in Model.Outgoing)
+            {
+                <partial name="_TradeOfferCard" model="offer" />
+
+                @if (offer.IsPending)
+                {
+                    <div class="trade-actions">
+                        <form method="post" asp-page-handler="Cancel">
+                            <input type="hidden" name="tradeOfferId" value="@offer.TradeOfferId" />
+                            <button type="submit" class="btn btn-outline-secondary">
+                                Cancel offer
+                            </button>
+                        </form>
+                    </div>
+                }
+            }
+        </div>
+    }
+</section>

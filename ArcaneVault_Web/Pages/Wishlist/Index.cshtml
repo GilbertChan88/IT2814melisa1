@@ -1,0 +1,125 @@
+@page
+@model ArcaneVault_Web.Pages.Wishlist.IndexModel
+
+@{
+    ViewData["Title"] = "My Wishlist";
+}
+
+<div class="page-header">
+    <div>
+        <h2>My Wishlist</h2>
+        <p class="page-subtitle">
+            Items you're watching. We'll alert you the moment a sold-out piece
+            comes back into stock.
+        </p>
+    </div>
+    <a asp-page="/CollectionItems/Available" class="btn btn-outline-secondary">
+        Browse catalogue
+    </a>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.StatusMessage))
+{
+    <div class="alert-success" role="status">@Model.StatusMessage</div>
+}
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert-danger" role="alert">@Model.ErrorMessage</div>
+}
+
+@if (Model.Items.Count == 0)
+{
+    <div class="empty-state">
+        <div class="empty-icon">&#9825;</div>
+        <strong>Your wishlist is empty</strong>
+        <p>
+            Tap the heart on any item to save it here and get notified about
+            restocks.
+        </p>
+        <a asp-page="/CollectionItems/Available" class="btn btn-primary">Start browsing</a>
+    </div>
+}
+else
+{
+    <div class="stats-bar">
+        <div class="stat-card">
+            <div class="stat-number">@Model.Items.Count</div>
+            <div class="stat-label">Saved items</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">@Model.InStockCount</div>
+            <div class="stat-label">Available now</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">@Model.AlertsEnabledCount</div>
+            <div class="stat-label">Alerts on</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">@Model.TotalValue.ToString("C0")</div>
+            <div class="stat-label">Combined price</div>
+        </div>
+    </div>
+
+    <div class="wishlist-list">
+        @foreach (var item in Model.Items)
+        {
+            var imageSrc = item.ResolvedImageUrl
+                ?? Url.Content("~/images/product-placeholder.png");
+
+            <article class="wishlist-row @(item.InStock ? "" : "is-unavailable")">
+                <a asp-page="/CatalogItems/Details" asp-route-id="@item.CatalogItemId"
+                   class="wishlist-thumb">
+                    <img src="@imageSrc" alt="@item.ItemName" loading="lazy" />
+                </a>
+
+                <div class="wishlist-info">
+                    <a asp-page="/CatalogItems/Details" asp-route-id="@item.CatalogItemId"
+                       class="title-link">
+                        <h3 class="wishlist-title">@item.ItemName</h3>
+                    </a>
+                    <div class="meta">@(item.CategoryName ?? "Uncategorised")</div>
+                    <div class="wishlist-meta-row">
+                        <span class="price">@item.Price.ToString("C")</span>
+                        @if (item.InStock)
+                        {
+                            <span class="pill pill-success">In stock (@item.StockQuantity)</span>
+                        }
+                        else
+                        {
+                            <span class="pill pill-muted">Out of stock</span>
+                        }
+                        <span class="text-muted-small">
+                            Saved @item.CreatedAt.ToLocalTime().ToString("d MMM yyyy")
+                        </span>
+                    </div>
+                </div>
+
+                <div class="wishlist-actions">
+                    @if (item.InStock)
+                    {
+                        <form method="post" asp-page-handler="AddToCart">
+                            <input type="hidden" name="catalogItemId" value="@item.CatalogItemId" />
+                            <button type="submit" class="btn btn-accent btn-sm">Add to cart</button>
+                        </form>
+                    }
+
+                    <form method="post" asp-page-handler="ToggleNotify">
+                        <input type="hidden" name="wishlistItemId" value="@item.WishlistItemId" />
+                        <input type="hidden" name="currentlyEnabled"
+                               value="@item.NotifyOnAvailable.ToString().ToLowerInvariant()" />
+                        <button type="submit"
+                                class="btn btn-sm @(item.NotifyOnAvailable ? "btn-info" : "btn-outline-secondary")"
+                                title="@(item.NotifyOnAvailable ? "Restock alert is on" : "Restock alert is off")">
+                            @(item.NotifyOnAvailable ? "&#128276; Alert on" : "&#128277; Alert off")
+                        </button>
+                    </form>
+
+                    <form method="post" asp-page-handler="Remove">
+                        <input type="hidden" name="wishlistItemId" value="@item.WishlistItemId" />
+                        <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+                    </form>
+                </div>
+            </article>
+        }
+    </div>
+}

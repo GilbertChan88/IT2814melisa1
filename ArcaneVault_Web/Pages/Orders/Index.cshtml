@@ -1,0 +1,171 @@
+@page
+@model ArcaneVault_Web.Pages.Orders.IndexModel
+
+@{
+    ViewData["Title"] = Model.IsAdminView ? "All Orders" : "My Orders";
+}
+
+<div class="page-header">
+    <div>
+        <h2>@(Model.IsAdminView ? "All Orders" : "My Orders")</h2>
+        <p class="page-subtitle">
+            @if (Model.IsAdminView)
+            {
+                <span>Every order placed on the platform.</span>
+            }
+            else
+            {
+                <span>Your purchase history and current order status.</span>
+            }
+        </p>
+    </div>
+    @if (!Model.IsAdminView)
+    {
+        <a asp-page="/CollectionItems/Available" class="btn btn-outline-secondary">
+            Shop again
+        </a>
+    }
+</div>
+
+@if (!string.IsNullOrEmpty(Model.StatusMessage))
+{
+    <div class="alert-success" role="status">@Model.StatusMessage</div>
+}
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert-danger" role="alert">@Model.ErrorMessage</div>
+}
+
+@if (Model.IsAdminView)
+{
+    <form method="get" class="filter-panel filter-panel-compact">
+        <div class="filter-row">
+            <div class="filter-field">
+                <label asp-for="StatusFilter" class="form-label">Filter by status</label>
+                <select asp-for="StatusFilter" class="form-select">
+                    <option value="">All statuses</option>
+                    @foreach (var (value, label) in ArcaneVault_Web.Pages.Orders.IndexModel.StatusOptions)
+                    {
+                        <option value="@value">@label</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-field filter-field-actions">
+                <button type="submit" class="btn btn-accent">Apply</button>
+                <a asp-page="Index" class="btn btn-outline-secondary">Reset</a>
+            </div>
+        </div>
+    </form>
+}
+
+@if (Model.Orders.Count == 0)
+{
+    <div class="empty-state">
+        <div class="empty-icon">&#128230;</div>
+        <strong>No orders yet</strong>
+        <p>
+            @if (Model.IsAdminView)
+            {
+                <span>No orders match this filter.</span>
+            }
+            else
+            {
+                <span>When you place an order it'll appear here.</span>
+            }
+        </p>
+        @if (!Model.IsAdminView)
+        {
+            <a asp-page="/CollectionItems/Available" class="btn btn-primary">Browse catalogue</a>
+        }
+    </div>
+}
+else
+{
+    @if (!Model.IsAdminView)
+    {
+        <div class="stats-bar">
+            <div class="stat-card">
+                <div class="stat-number">@Model.Orders.Count</div>
+                <div class="stat-label">Orders</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">@Model.TotalSpend.ToString("C0")</div>
+                <div class="stat-label">Total spent</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">@Model.Orders.Sum(o => o.TotalUnits)</div>
+                <div class="stat-label">Units bought</div>
+            </div>
+        </div>
+    }
+
+    <div class="order-list">
+        @foreach (var order in Model.Orders)
+        {
+            <article class="order-card">
+                <header class="order-card-header">
+                    <div>
+                        <a asp-page="Details" asp-route-id="@order.OrderId" class="title-link">
+                            <h3 class="order-number">Order #@order.OrderId</h3>
+                        </a>
+                        <div class="text-muted-small">
+                            @order.OrderDate.ToLocalTime().ToString("d MMM yyyy, HH:mm")
+                            @if (Model.IsAdminView)
+                            {
+                                <span> &middot; @order.UserName</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="order-card-header-right">
+                        <span class="pill @order.StatusCssClass">@order.StatusName</span>
+                        <span class="order-total">@order.TotalAmount.ToString("C")</span>
+                    </div>
+                </header>
+
+                <div class="order-line-preview">
+                    @foreach (var line in order.Items.Take(4))
+                    {
+                        var imageSrc = line.ResolvedImageUrl
+                            ?? Url.Content("~/images/product-placeholder.png");
+                        <img src="@imageSrc" alt="@line.ItemName"
+                             title="@line.Quantity × @line.ItemName" loading="lazy" />
+                    }
+                    @if (order.Items.Count > 4)
+                    {
+                        <span class="order-more">+@(order.Items.Count - 4)</span>
+                    }
+                    <span class="order-units text-muted-small">
+                        @order.TotalUnits @(order.TotalUnits == 1 ? "unit" : "units")
+                    </span>
+                </div>
+
+                <footer class="order-card-footer">
+                    <a asp-page="Details" asp-route-id="@order.OrderId"
+                       class="btn btn-outline-secondary btn-sm">View details</a>
+
+                    @if (Model.IsAdminView)
+                    {
+                        <form method="post" asp-page-handler="UpdateStatus" class="order-status-form">
+                            <input type="hidden" name="orderId" value="@order.OrderId" />
+                            <label class="visually-hidden" for="status-@order.OrderId">Status</label>
+                            <select id="status-@order.OrderId" name="status" class="form-select form-select-sm">
+                                @foreach (var (value, label) in ArcaneVault_Web.Pages.Orders.IndexModel.StatusOptions)
+                                {
+                                    if (value == order.Status)
+                                    {
+                                        <option value="@value" selected>@label</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@value">@label</option>
+                                    }
+                                }
+                            </select>
+                            <button type="submit" class="btn btn-accent btn-sm">Update</button>
+                        </form>
+                    }
+                </footer>
+            </article>
+        }
+    </div>
+}

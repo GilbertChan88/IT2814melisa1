@@ -13,25 +13,25 @@ namespace ArcaneVault_Web.Pages.CatalogItems
         {
             _apiClient = apiClient;
         }
+
         [BindProperty]
-        public CatalogItem CatalogItem { get; set; }
-            = new CatalogItem();
+        public CatalogItem CatalogItem { get; set; } = new CatalogItem();
 
         [BindProperty]
         public IFormFile? ImageFile { get; set; }
 
-        public List<Category> CategoryList { get; set; }
-            = new List<Category>();
+        public List<Category> CategoryList { get; set; } = new List<Category>();
+
+        public string? ErrorMessage { get; set; }
 
         public async Task<IActionResult> OnGetAsync(int id)
         {
-            if (HttpContext.Session.GetInt32("RoleId") != 1)
+            if (!HttpContext.IsAdmin())
             {
                 return RedirectToPage("/Index");
             }
 
-            CatalogItem? existingItem =
-                await _apiClient.GetCatalogItem(id);
+            var existingItem = await _apiClient.GetCatalogItem(id);
 
             if (existingItem == null)
             {
@@ -40,58 +40,63 @@ namespace ArcaneVault_Web.Pages.CatalogItems
 
             CatalogItem = existingItem;
 
-            CategoryList =
-                await CategoryDAL.GetCategories();
+            await LoadCategoriesAsync();
 
             return Page();
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
-            if (HttpContext.Session.GetInt32("RoleId") != 1)
+            if (!HttpContext.IsAdmin())
             {
                 return RedirectToPage("/Index");
             }
 
             if (!ModelState.IsValid)
             {
-                CategoryList =
-                    await CategoryDAL.GetCategories();
-
+                await LoadCategoriesAsync();
                 return Page();
             }
 
-            HttpResponseMessage response =
-                await _apiClient.UpdateCatalogItem(
-                    CatalogItem);
+            var response = await _apiClient.UpdateCatalogItem(CatalogItem);
 
             if (!response.IsSuccessStatusCode)
             {
-                string errorMessage =
-                    await response.Content.ReadAsStringAsync();
-
-                ModelState.AddModelError(
-                    "",
-                    errorMessage);
-
-                CategoryList =
-                    await CategoryDAL.GetCategories();
-
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                ErrorMessage = errorMessage.Trim('"');
+                await LoadCategoriesAsync();
                 return Page();
             }
 
-            // upload new image if provided
             if (ImageFile != null && ImageFile.Length > 0)
             {
                 using var stream = ImageFile.OpenReadStream();
-                var imageUrl = await _apiClient.UploadImageAsync(CatalogItem.CatalogItemId, stream, ImageFile.FileName, ImageFile.ContentType);
+                var imageUrl = await _apiClient.UploadImageAsync(
+                    CatalogItem.CatalogItemId, stream,
+                    ImageFile.FileName, ImageFile.ContentType);
+
                 if (!string.IsNullOrEmpty(imageUrl))
                 {
                     CatalogItem.ImageUrl = imageUrl;
                 }
             }
 
+            TempData["StatusMessage"] = $"\"{CatalogItem.ItemName}\" updated.";
+
             return RedirectToPage("Index");
+        }
+
+        private async Task LoadCategoriesAsync()
+        {
+            try
+            {
+                CategoryList = await CategoryDAL.GetCategories() ?? new List<Category>();
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage ??= "Unable to load categories: " + ex.Message;
+                CategoryList = new List<Category>();
+            }
         }
     }
 }

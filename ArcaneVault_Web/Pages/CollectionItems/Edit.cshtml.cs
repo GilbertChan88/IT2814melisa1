@@ -2,10 +2,12 @@ using ArcaneVault_Web.DAL;
 using ArcaneVault_Web.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using System.ComponentModel.DataAnnotations;
 
 namespace ArcaneVault_Web.Pages.CollectionItems
 {
+    /// <summary>
+    /// Edits a holding: quantity plus condition grading and valuation.
+    /// </summary>
     public class EditModel : PageModel
     {
         private readonly CatalogItemApiClient _apiClient;
@@ -14,126 +16,125 @@ namespace ArcaneVault_Web.Pages.CollectionItems
         {
             _apiClient = apiClient;
         }
+
         public CollectionItem? CollectionItem { get; set; }
 
+        /// <summary>
+        /// The editable fields. Bound as one object so the form and the API
+        /// payload stay in step.
+        /// </summary>
         [BindProperty]
-        public int ItemId { get; set; }
+        public CollectionItem Input { get; set; } = new CollectionItem();
 
-        [BindProperty]
-        [Range(
-            0,
-            int.MaxValue,
-            ErrorMessage = "Current quantity cannot be negative")]
-        public int CurrentQuantity { get; set; }
-
-        // Loads the category from the admin-created catalogue item
-        private async Task LoadCategoryAsync(
-            CollectionItem collectionItem)
+        /// <summary>
+        /// Category lives on the catalogue item, not the holding, so it is
+        /// fetched separately for display.
+        /// </summary>
+        private async Task LoadCategoryAsync(CollectionItem collectionItem)
         {
-            if (collectionItem.CatalogItemId.HasValue)
+            if (!collectionItem.CatalogItemId.HasValue)
             {
-                CatalogItem? catalogItem =
-                    await _apiClient.GetCatalogItem(
-                        collectionItem.CatalogItemId.Value);
+                return;
+            }
 
-                if (catalogItem != null)
-                {
-                    collectionItem.CategoryCode =
-                        catalogItem.CategoryCode;
+            var catalogItem = await _apiClient.GetCatalogItem(
+                collectionItem.CatalogItemId.Value);
 
-                    collectionItem.CategoryName =
-                        catalogItem.CategoryName;
-                }
+            if (catalogItem != null)
+            {
+                collectionItem.CategoryCode = catalogItem.CategoryCode;
+                collectionItem.CategoryName = catalogItem.CategoryName;
+                collectionItem.ImageUrl ??= catalogItem.ImageUrl;
             }
         }
 
         public async Task<IActionResult> OnGetAsync(int id)
         {
-            string? userName =
-                HttpContext.Session.GetString("UserName");
+            var userName = HttpContext.GetUserName();
 
-            if (userName == null)
+            if (string.IsNullOrWhiteSpace(userName))
             {
                 return RedirectToPage("/Login");
             }
 
-            CollectionItem =
-                await CollectionItemDAL.GetCollectionItem(id);
+            CollectionItem = await CollectionItemDAL.GetCollectionItem(id);
 
             if (CollectionItem == null)
             {
                 return NotFound();
             }
 
-            if (CollectionItem.UserName != userName)
+            if (!string.Equals(CollectionItem.UserName, userName,
+                StringComparison.OrdinalIgnoreCase))
             {
                 return RedirectToPage("Index");
             }
 
-            // Load category before displaying the page
             await LoadCategoryAsync(CollectionItem);
 
-            ItemId = CollectionItem.ItemId;
-
-            CurrentQuantity =
-                CollectionItem.CurrentQuantity;
+            Input = new CollectionItem
+            {
+                ItemId = CollectionItem.ItemId,
+                CurrentQuantity = CollectionItem.CurrentQuantity,
+                Condition = CollectionItem.Condition,
+                PurchasePrice = CollectionItem.PurchasePrice,
+                EstimatedValue = CollectionItem.EstimatedValue,
+                AcquiredAt = CollectionItem.AcquiredAt,
+                Notes = CollectionItem.Notes
+            };
 
             return Page();
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
-            string? userName =
-                HttpContext.Session.GetString("UserName");
+            var userName = HttpContext.GetUserName();
 
-            if (userName == null)
+            if (string.IsNullOrWhiteSpace(userName))
             {
                 return RedirectToPage("/Login");
             }
 
-            CollectionItem? existingItem =
-                await CollectionItemDAL.GetCollectionItem(ItemId);
+            var existingItem = await CollectionItemDAL.GetCollectionItem(Input.ItemId);
 
             if (existingItem == null)
             {
                 return NotFound();
             }
 
-            if (existingItem.UserName != userName)
+            if (!string.Equals(existingItem.UserName, userName,
+                StringComparison.OrdinalIgnoreCase))
             {
                 return RedirectToPage("Index");
             }
 
-            // Reload category in case the page must be displayed again
             await LoadCategoryAsync(existingItem);
+            CollectionItem = existingItem;
 
             if (!ModelState.IsValid)
             {
-                CollectionItem = existingItem;
-
                 return Page();
             }
 
-            existingItem.CurrentQuantity =
-                CurrentQuantity;
+            // Copy the editable fields onto the loaded entity so unrelated
+            // values (owner, catalogue link, name) are preserved.
+            existingItem.CurrentQuantity = Input.CurrentQuantity;
+            existingItem.Condition = Input.Condition;
+            existingItem.PurchasePrice = Input.PurchasePrice;
+            existingItem.EstimatedValue = Input.EstimatedValue;
+            existingItem.AcquiredAt = Input.AcquiredAt;
+            existingItem.Notes = Input.Notes;
 
-            HttpResponseMessage response =
-                await CollectionItemDAL.UpdateCollectionItem(
-                    existingItem);
+            var response = await CollectionItemDAL.UpdateCollectionItem(existingItem);
 
             if (!response.IsSuccessStatusCode)
             {
-                string errorMessage =
-                    await response.Content.ReadAsStringAsync();
-
-                ModelState.AddModelError(
-                    "",
-                    errorMessage.Trim('"'));
-
-                CollectionItem = existingItem;
-
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                ModelState.AddModelError(string.Empty, errorMessage.Trim('"'));
                 return Page();
             }
+
+            TempData["StatusMessage"] = "Holding updated.";
 
             return RedirectToPage("Index");
         }

@@ -361,3 +361,10 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+
+# SQLite write-ahead log and shared-memory files. These are transient: SQLite
+# recreates them as needed and deletes them on a clean close, so committing
+# them produces spurious diffs and can conflict between machines.
+*.db-wal
+*.db-shm

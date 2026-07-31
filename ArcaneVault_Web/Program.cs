@@ -4,9 +4,26 @@ namespace ArcaneVault_Web
 {
     public class Program
     {
+        /// <summary>
+        /// Fallback API address, used when nothing is configured. Override with
+        /// ApiSettings:BaseUrl in appsettings, or the ApiSettings__BaseUrl
+        /// environment variable.
+        /// </summary>
+        private const string DefaultApiBaseUrl = "https://localhost:7297/";
+
+        private static string _apiBaseUrl = DefaultApiBaseUrl;
+
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            _apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"]
+                ?? DefaultApiBaseUrl;
+
+            // Point the static DALs and image URL resolution at the same API
+            // address the typed clients use.
+            ApiConfig.Configure(_apiBaseUrl);
+            Models.ImageUrlResolver.Configure(_apiBaseUrl);
 
             // Add services to the container.
             builder.Services.AddRazorPages();
@@ -20,16 +37,17 @@ namespace ArcaneVault_Web
                 options.Cookie.IsEssential = true;
             });
 
-            // CHATGPT added:
-            builder.Services.AddHttpClient<CategoryDAL>(client =>
-            {
-                client.BaseAddress = new Uri("https://localhost:7297/");
-            });
-            // Register CatalogItemApiClient as a typed HTTP client
-            builder.Services.AddHttpClient<CatalogItemApiClient>(client =>
-            {
-                client.BaseAddress = new Uri("https://localhost:7297/");
-            });
+            // Typed HTTP clients for the backend API.
+            AddApiClient<CategoryDAL>(builder);
+            AddApiClient<CatalogItemApiClient>(builder);
+            AddApiClient<WishlistApiClient>(builder);
+            AddApiClient<NotificationApiClient>(builder);
+            AddApiClient<ReviewApiClient>(builder);
+            AddApiClient<SubmissionApiClient>(builder);
+            AddApiClient<CartApiClient>(builder);
+            AddApiClient<OrderApiClient>(builder);
+            AddApiClient<TradeApiClient>(builder);
+            AddApiClient<AnalyticsApiClient>(builder);
 
             var app = builder.Build();
 
@@ -54,6 +72,15 @@ namespace ArcaneVault_Web
                .WithStaticAssets();
 
             app.Run();
+        }
+
+        private static void AddApiClient<TClient>(WebApplicationBuilder builder)
+            where TClient : class
+        {
+            builder.Services.AddHttpClient<TClient>(client =>
+            {
+                client.BaseAddress = new Uri(_apiBaseUrl);
+            });
         }
     }
 }

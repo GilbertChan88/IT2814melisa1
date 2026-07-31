@@ -1,0 +1,414 @@
+@page
+@model ArcaneVault_Web.Pages.Admin.AnalyticsModel
+@using ArcaneVault_Web.Models
+
+@{
+    ViewData["Title"] = "Platform Insights";
+}
+
+<div class="page-header">
+    <div>
+        <h2>Platform Insights</h2>
+        <p class="page-subtitle">
+            What's selling, what's wanted, and who's driving the community.
+        </p>
+    </div>
+    <form method="get" class="inline-form">
+        <label asp-for="TopN" class="form-label-inline">Show top</label>
+        <select asp-for="TopN" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+        </select>
+    </form>
+</div>
+
+@if (Model.Analytics == null)
+{
+    <div class="empty-state">
+        <div class="empty-icon">&#9888;</div>
+        <strong>Insights unavailable</strong>
+        <p>
+            The analytics service didn't respond. Check that the API is running,
+            then reload this page.
+        </p>
+        <a asp-page="Analytics" class="btn btn-primary">Retry</a>
+    </div>
+}
+else
+{
+    var data = Model.Analytics;
+
+    <!-- Headline metrics -->
+    <div class="stats-bar stats-bar-wide">
+        <div class="stat-card">
+            <div class="stat-number">@data.TotalRevenue.ToString("C0")</div>
+            <div class="stat-label">Revenue</div>
+            <div class="stat-note">@data.AverageOrderValue.ToString("C0") avg order</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">@data.TotalOrders</div>
+            <div class="stat-label">Orders</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">@data.ActiveCollectors</div>
+            <div class="stat-label">Active collectors</div>
+            <div class="stat-note">of @data.TotalUsers members</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">@data.TotalCatalogItems</div>
+            <div class="stat-label">Catalogue items</div>
+            <div class="stat-note">@data.TotalCatalogValue.ToString("C0") stock value</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">@data.AverageRating.ToString("0.0")</div>
+            <div class="stat-label">Avg rating</div>
+            <div class="stat-note">@data.TotalReviews reviews</div>
+        </div>
+        <a asp-page="Submissions" class="stat-card stat-card-link">
+            <div class="stat-number">@data.PendingSubmissions</div>
+            <div class="stat-label">Pending review</div>
+            @if (data.PendingSubmissions > 0)
+            {
+                <div class="stat-note stat-note-alert">Needs attention</div>
+            }
+        </a>
+        <div class="stat-card">
+            <div class="stat-number">@data.TotalTradeOffers</div>
+            <div class="stat-label">Trade offers</div>
+            <div class="stat-note">@data.TradeAcceptanceRate% accepted</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">@data.OutOfStockItems</div>
+            <div class="stat-label">Out of stock</div>
+            @if (data.OutOfStockItems > 0)
+            {
+                <div class="stat-note stat-note-alert">Restock opportunity</div>
+            }
+        </div>
+    </div>
+
+    <!-- Trends -->
+    <section class="mt-section">
+        <div class="section-heading">
+            <h3>Trends</h3>
+        </div>
+        <div class="chart-grid">
+            @await Html.PartialAsync("_BarChart", new BarChartViewModel { Title = "Revenue by month", Points = data.RevenueTrend, IsCurrency = true, EmptyMessage = "No orders recorded yet." })
+
+            @await Html.PartialAsync("_BarChart", new BarChartViewModel { Title = "Collection growth", Subtitle = "New holdings added per month", Points = data.CollectionGrowthTrend, EmptyMessage = "No collection activity yet." })
+
+            @await Html.PartialAsync("_BarChart", new BarChartViewModel { Title = "Order status", Points = data.OrderStatusBreakdown, Horizontal = true, EmptyMessage = "No orders yet." })
+
+            @await Html.PartialAsync("_BarChart", new BarChartViewModel { Title = "Rating distribution", Points = data.RatingDistribution, Horizontal = true, EmptyMessage = "No reviews yet." })
+        </div>
+    </section>
+
+    <!-- Most popular items -->
+    <section class="mt-section">
+        <div class="section-heading">
+            <h3>Most popular items</h3>
+            <span class="text-muted-small">
+                Weighted by collection adds, wishlists, sales and views
+            </span>
+        </div>
+
+        @if (data.MostPopularItems.Count == 0)
+        {
+            <div class="empty-state empty-state-compact">
+                <strong>Not enough activity yet</strong>
+            </div>
+        }
+        else
+        {
+            <div class="table-wrapper">
+                <table class="table-dark-custom">
+                    <thead>
+                        <tr>
+                            <th class="num">#</th>
+                            <th>Item</th>
+                            <th class="num">Score</th>
+                            <th class="num">Collected</th>
+                            <th class="num">Wishlisted</th>
+                            <th class="num">Sold</th>
+                            <th class="num">Views</th>
+                            <th class="num">Rating</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{ var popularRank = 1; }
+                        @foreach (var item in data.MostPopularItems)
+                        {
+                            <tr>
+                                <td class="num rank-cell">@popularRank</td>
+                                <td>
+                                    <a asp-page="/CatalogItems/Details" asp-route-id="@item.CatalogItemId"
+                                       class="title-link">@item.ItemName</a>
+                                    <div class="text-muted-small">@item.CategoryName</div>
+                                </td>
+                                <td class="num"><strong>@item.PopularityScore.ToString("0.0")</strong></td>
+                                <td class="num">@item.TimesCollected</td>
+                                <td class="num">@item.WishlistCount</td>
+                                <td class="num">@item.UnitsSold</td>
+                                <td class="num">@item.ViewCount</td>
+                                <td class="num">
+                                    @if (item.ReviewCount > 0)
+                                    {
+                                        <span>@item.AverageRating.ToString("0.0") (@item.ReviewCount)</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted-small">&ndash;</span>
+                                    }
+                                </td>
+                            </tr>
+                            popularRank++;
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+
+    <!-- Demand vs sales -->
+    <div class="two-column-section mt-section">
+        <section>
+            <div class="section-heading">
+                <h3>Most wishlisted</h3>
+                <span class="text-muted-small">Unmet demand</span>
+            </div>
+            @if (data.MostWishlisted.Count == 0)
+            {
+                <div class="empty-state empty-state-compact">
+                    <strong>No wishlist activity yet</strong>
+                </div>
+            }
+            else
+            {
+                <ul class="rank-list">
+                    @foreach (var item in data.MostWishlisted)
+                    {
+                        <li class="rank-row">
+                            <img src="@(item.ResolvedImageUrl ?? Url.Content("~/images/product-placeholder.png"))"
+                                 alt="@item.ItemName" loading="lazy" />
+                            <div class="rank-info">
+                                <a asp-page="/CatalogItems/Details" asp-route-id="@item.CatalogItemId"
+                                   class="title-link">@item.ItemName</a>
+                                <div class="text-muted-small">@item.Price.ToString("C")</div>
+                            </div>
+                            <div class="rank-metric">
+                                <strong>@item.WishlistCount</strong>
+                                <span class="text-muted-small">watching</span>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+        </section>
+
+        <section>
+            <div class="section-heading">
+                <h3>Best sellers</h3>
+                <span class="text-muted-small">By revenue</span>
+            </div>
+            @if (data.BestSellers.Count == 0)
+            {
+                <div class="empty-state empty-state-compact">
+                    <strong>No sales recorded yet</strong>
+                </div>
+            }
+            else
+            {
+                <ul class="rank-list">
+                    @foreach (var item in data.BestSellers)
+                    {
+                        <li class="rank-row">
+                            <img src="@(item.ResolvedImageUrl ?? Url.Content("~/images/product-placeholder.png"))"
+                                 alt="@item.ItemName" loading="lazy" />
+                            <div class="rank-info">
+                                <a asp-page="/CatalogItems/Details" asp-route-id="@item.CatalogItemId"
+                                   class="title-link">@item.ItemName</a>
+                                <div class="text-muted-small">@item.UnitsSold units sold</div>
+                            </div>
+                            <div class="rank-metric">
+                                <strong>@item.Revenue.ToString("C0")</strong>
+                                <span class="text-muted-small">revenue</span>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+        </section>
+    </div>
+
+    <!-- People -->
+    <section class="mt-section">
+        <div class="section-heading">
+            <h3>Most engaged members</h3>
+            <span class="text-muted-small">
+                Weighted by collecting, buying, reviewing, listing and trading
+            </span>
+        </div>
+
+        @if (data.MostEngagedUsers.Count == 0)
+        {
+            <div class="empty-state empty-state-compact">
+                <strong>No member activity yet</strong>
+            </div>
+        }
+        else
+        {
+            <div class="table-wrapper">
+                <table class="table-dark-custom">
+                    <thead>
+                        <tr>
+                            <th class="num">#</th>
+                            <th>Member</th>
+                            <th class="num">Engagement</th>
+                            <th class="num">Items</th>
+                            <th class="num">Value</th>
+                            <th class="num">Orders</th>
+                            <th class="num">Spend</th>
+                            <th class="num">Reviews</th>
+                            <th class="num">Listings</th>
+                            <th class="num">Trades</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{ var userRank = 1; }
+                        @foreach (var user in data.MostEngagedUsers)
+                        {
+                            <tr>
+                                <td class="num rank-cell">@userRank</td>
+                                <td>
+                                    <strong>@user.UserName</strong>
+                                    @if (user.IsAdmin)
+                                    {
+                                        <span class="pill pill-muted">Staff</span>
+                                    }
+                                    <div class="text-muted-small">@user.Email</div>
+                                </td>
+                                <td class="num"><strong>@user.EngagementScore.ToString("0.0")</strong></td>
+                                <td class="num">@user.CollectionItemCount</td>
+                                <td class="num">@user.CollectionValue.ToString("C0")</td>
+                                <td class="num">@user.OrderCount</td>
+                                <td class="num">@user.TotalSpend.ToString("C0")</td>
+                                <td class="num">@user.ReviewsWritten</td>
+                                <td class="num">@user.ListingsSubmitted</td>
+                                <td class="num">@user.TradesCompleted</td>
+                            </tr>
+                            userRank++;
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+
+    <div class="two-column-section mt-section">
+        <section>
+            <div class="section-heading">
+                <h3>Top collectors</h3>
+                <span class="text-muted-small">By portfolio value</span>
+            </div>
+            <ul class="rank-list">
+                @foreach (var user in data.TopCollectors)
+                {
+                    <li class="rank-row rank-row-compact">
+                        <div class="rank-info">
+                            <strong>@user.UserName</strong>
+                            <div class="text-muted-small">
+                                @user.CollectionItemCount items &middot; @user.TotalUnits units
+                            </div>
+                        </div>
+                        <div class="rank-metric">
+                            <strong>@user.CollectionValue.ToString("C0")</strong>
+                        </div>
+                    </li>
+                }
+            </ul>
+        </section>
+
+        <section>
+            <div class="section-heading">
+                <h3>Top spenders</h3>
+                <span class="text-muted-small">By lifetime orders</span>
+            </div>
+            @if (data.TopSpenders.Count == 0)
+            {
+                <div class="empty-state empty-state-compact">
+                    <strong>No purchases yet</strong>
+                </div>
+            }
+            else
+            {
+                <ul class="rank-list">
+                    @foreach (var user in data.TopSpenders)
+                    {
+                        <li class="rank-row rank-row-compact">
+                            <div class="rank-info">
+                                <strong>@user.UserName</strong>
+                                <div class="text-muted-small">
+                                    @user.OrderCount @(user.OrderCount == 1 ? "order" : "orders")
+                                </div>
+                            </div>
+                            <div class="rank-metric">
+                                <strong>@user.TotalSpend.ToString("C0")</strong>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+        </section>
+    </div>
+
+    <!-- Category performance -->
+    <section class="mt-section mb-section">
+        <div class="section-heading">
+            <h3>Category performance</h3>
+            <span class="text-muted-small">Revenue share by category</span>
+        </div>
+
+        @if (data.CategoryPerformance.Count == 0)
+        {
+            <div class="empty-state empty-state-compact">
+                <strong>No category data yet</strong>
+            </div>
+        }
+        else
+        {
+            <div class="table-wrapper">
+                <table class="table-dark-custom">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th class="num">Listings</th>
+                            <th class="num">Units sold</th>
+                            <th class="num">Revenue</th>
+                            <th>Share</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var category in data.CategoryPerformance)
+                        {
+                            <tr>
+                                <td><span class="category-pill">@category.CategoryName</span></td>
+                                <td class="num">@category.ItemCount</td>
+                                <td class="num">@category.TotalUnits</td>
+                                <td class="num">@category.TotalValue.ToString("C")</td>
+                                <td>
+                                    <div class="share-bar">
+                                        <span class="share-fill"
+                                              style="width:@category.ValueSharePercent.ToString(System.Globalization.CultureInfo.InvariantCulture)%"></span>
+                                        <span class="share-text">@category.ValueSharePercent%</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+}

@@ -1,56 +1,105 @@
-﻿@page "{id:int}"
+@page
 @model ArcaneVault_Web.Pages.CollectionItems.AddModel
+@using ArcaneVault_Web.Models
 
 @{
     ViewData["Title"] = "Add to Collection";
 }
 
-<h2>Add to Collection</h2>
-
-<table class="table table-bordered">
-    <tr>
-        <th>Item Name</th>
-        <td>@Model.CatalogItem?.ItemName</td>
-    </tr>
-
-    <tr>
-        <th>Category</th>
-        <td>@Model.CatalogItem?.CategoryName</td>
-    </tr>
-</table>
-
-<form method="post">
-
-    <div asp-validation-summary="ModelOnly"
-         class="text-danger"></div>
-
-    <input asp-for="AddItem.CatalogItemId"
-           type="hidden" />
-
-    <div class="mb-3">
-        <label asp-for="AddItem.Quantity"
-               class="form-label"></label>
-
-        <input asp-for="AddItem.Quantity"
-               class="form-control" />
-
-        <span asp-validation-for="AddItem.Quantity"
-              class="text-danger"></span>
+<div class="page-header">
+    <div>
+        <h2>Add to Collection</h2>
+        <p class="page-subtitle">
+            Record what you paid and how it's graded to track your portfolio.
+        </p>
     </div>
+    <a asp-page="Available" class="btn btn-outline-secondary">Back to shop</a>
+</div>
 
-    <button type="submit"
-            class="btn btn-success">
-        Add to Collection
-    </button>
-
-    <a asp-page="Available"
-       class="btn btn-secondary">
-        Cancel
-    </a>
-
-</form>
-
-@section Scripts
+@if (Model.CatalogItem == null)
 {
+    <div class="empty-state">
+        <div class="empty-icon">&#9888;</div>
+        <strong>Item not found</strong>
+        <a asp-page="Available" class="btn btn-primary">Back to shop</a>
+    </div>
+}
+else
+{
+    var item = Model.CatalogItem;
+    var imageSrc = item.ResolvedImageUrl ?? Url.Content("~/images/product-placeholder.png");
+
+    <div class="add-collection-layout">
+        <aside class="add-collection-preview">
+            <img src="@imageSrc" alt="@item.ItemName" />
+            <h3 class="preview-title">@item.ItemName</h3>
+            <div class="meta">@(item.CategoryName ?? item.CategoryCode)</div>
+            <div class="price">@item.Price.ToString("C")</div>
+            @await Html.PartialAsync("_StarRating", new StarRatingViewModel { Rating = item.AverageRating, ReviewCount = item.ReviewCount, ShowEmptyText = true })
+        </aside>
+
+        <div class="sell-form-container">
+            <form method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <input type="hidden" asp-for="AddItem.CatalogItemId" />
+
+                <div class="form-row-2">
+                    <div class="mb-3">
+                        <label asp-for="AddItem.Quantity" class="form-label"></label>
+                        <input asp-for="AddItem.Quantity" class="form-control"
+                               type="number" min="1" />
+                        <span asp-validation-for="AddItem.Quantity" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="AddItem.Condition" class="form-label"></label>
+                        <select asp-for="AddItem.Condition" class="form-select"
+                                asp-items="Html.GetEnumSelectList<ItemCondition>()"></select>
+                        <span asp-validation-for="AddItem.Condition" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="mb-3">
+                        <label asp-for="AddItem.PurchasePrice" class="form-label"></label>
+                        <input asp-for="AddItem.PurchasePrice" class="form-control"
+                               type="number" step="0.01" min="0" placeholder="What you paid" />
+                        <span asp-validation-for="AddItem.PurchasePrice" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="AddItem.EstimatedValue" class="form-label"></label>
+                        <input asp-for="AddItem.EstimatedValue" class="form-control"
+                               type="number" step="0.01" min="0" />
+                        <small class="form-hint">
+                            Defaults to the catalogue price. Used for portfolio value.
+                        </small>
+                        <span asp-validation-for="AddItem.EstimatedValue" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="AddItem.AcquiredAt" class="form-label"></label>
+                    <input asp-for="AddItem.AcquiredAt" class="form-control" type="date" />
+                    <span asp-validation-for="AddItem.AcquiredAt" class="text-danger"></span>
+                </div>
+
+                <div class="mb-4">
+                    <label asp-for="AddItem.Notes" class="form-label"></label>
+                    <textarea asp-for="AddItem.Notes" class="form-control" rows="3"
+                              placeholder="Where you got it, packaging notes, anything else&hellip;"></textarea>
+                    <span asp-validation-for="AddItem.Notes" class="text-danger"></span>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-accent">Add to collection</button>
+                    <a asp-page="Available" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+@section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }

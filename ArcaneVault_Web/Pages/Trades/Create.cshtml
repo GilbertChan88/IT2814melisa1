@@ -1,0 +1,173 @@
+@page
+@model ArcaneVault_Web.Pages.Trades.CreateModel
+
+@{
+    ViewData["Title"] = "Propose a Trade";
+}
+
+<div class="page-header">
+    <div>
+        <h2>Propose a Trade</h2>
+        <p class="page-subtitle">
+            Choose a collector, then pick what you'll give and what you'd like
+            in return.
+        </p>
+    </div>
+    <a asp-page="Index" class="btn btn-outline-secondary">Back to trades</a>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert-danger" role="alert">@Model.ErrorMessage</div>
+}
+
+@if (Model.Partners.Count == 0)
+{
+    <div class="empty-state">
+        <div class="empty-icon">&#128101;</div>
+        <strong>No trade partners yet</strong>
+        <p>
+            Nobody else is holding items that can be traded right now. Once other
+            collectors add items to their collections they'll show up here.
+        </p>
+        <a asp-page="/CollectionItems/Available" class="btn btn-primary">Browse catalogue</a>
+    </div>
+}
+else
+{
+    <!-- Step 1: pick a partner -->
+    <form method="post" asp-page-handler="SelectPartner" class="filter-panel filter-panel-compact">
+        <div class="filter-row">
+            <div class="filter-field">
+                <label asp-for="Form.ToUserName" class="form-label">Trade with</label>
+                <select asp-for="Form.ToUserName" class="form-select">
+                    <option value="">-- Choose a collector --</option>
+                    @foreach (var partner in Model.Partners)
+                    {
+                        <option value="@partner.UserName">
+                            @partner.UserName (@partner.ItemCount items)
+                        </option>
+                    }
+                </select>
+                <span asp-validation-for="Form.ToUserName" class="text-danger"></span>
+            </div>
+            <div class="filter-field filter-field-actions">
+                <button type="submit" class="btn btn-accent">Load their collection</button>
+            </div>
+        </div>
+    </form>
+
+    @if (!Model.HasPartnerSelected)
+    {
+        <div class="empty-state empty-state-compact">
+            <strong>Pick a collector to continue</strong>
+            <p>Choose someone above and we'll show what they have available.</p>
+        </div>
+    }
+    else
+    {
+        <!-- Step 2: build the offer -->
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Form.ToUserName" />
+
+            <div class="trade-builder">
+                <section class="trade-builder-column">
+                    <h3 class="trade-builder-title">
+                        You give
+                        <span class="text-muted-small">from @Model.CurrentUserName's collection</span>
+                    </h3>
+
+                    @if (Model.MyItems.Count == 0)
+                    {
+                        <div class="empty-state empty-state-compact">
+                            <strong>You have nothing to trade</strong>
+                            <p>Add items to your collection first.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <ul class="trade-picker">
+                            @foreach (var item in Model.MyItems)
+                            {
+                                <li>
+                                    <label class="trade-picker-row">
+                                        <input type="checkbox" name="Form.OfferedItemIds"
+                                               value="@item.CatalogItemId"
+                                               checked="@Model.Form.OfferedItemIds.Contains(item.CatalogItemId)" />
+                                        <img src="@(item.ResolvedImageUrl ?? Url.Content("~/images/product-placeholder.png"))"
+                                             alt="@item.ItemName" loading="lazy" />
+                                        <span class="trade-picker-info">
+                                            <span class="trade-picker-name">@item.ItemName</span>
+                                            <span class="text-muted-small">
+                                                @item.Price.ToString("C") &middot;
+                                                @item.ConditionName &middot;
+                                                you hold @item.CurrentQuantity
+                                            </span>
+                                        </span>
+                                    </label>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </section>
+
+                <section class="trade-builder-column">
+                    <h3 class="trade-builder-title">
+                        You receive
+                        <span class="text-muted-small">from @Model.Form.ToUserName's collection</span>
+                    </h3>
+
+                    @if (Model.PartnerItems.Count == 0)
+                    {
+                        <div class="empty-state empty-state-compact">
+                            <strong>Nothing available</strong>
+                            <p>@Model.Form.ToUserName has no tradable items right now.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <ul class="trade-picker">
+                            @foreach (var item in Model.PartnerItems)
+                            {
+                                <li>
+                                    <label class="trade-picker-row">
+                                        <input type="checkbox" name="Form.RequestedItemIds"
+                                               value="@item.CatalogItemId"
+                                               checked="@Model.Form.RequestedItemIds.Contains(item.CatalogItemId)" />
+                                        <img src="@(item.ResolvedImageUrl ?? Url.Content("~/images/product-placeholder.png"))"
+                                             alt="@item.ItemName" loading="lazy" />
+                                        <span class="trade-picker-info">
+                                            <span class="trade-picker-name">@item.ItemName</span>
+                                            <span class="text-muted-small">
+                                                @item.Price.ToString("C") &middot;
+                                                @item.ConditionName &middot;
+                                                they hold @item.CurrentQuantity
+                                            </span>
+                                        </span>
+                                    </label>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </section>
+            </div>
+
+            <div class="mb-3 trade-message-field">
+                <label asp-for="Form.Message" class="form-label"></label>
+                <textarea asp-for="Form.Message" class="form-control" rows="3"
+                          placeholder="Add a note to explain your offer&hellip;"></textarea>
+                <span asp-validation-for="Form.Message" class="text-danger"></span>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-accent">Send offer</button>
+                <a asp-page="Index" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    }
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

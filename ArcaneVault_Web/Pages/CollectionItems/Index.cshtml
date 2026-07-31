@@ -1,54 +1,110 @@
 @page
 @model ArcaneVault_Web.Pages.CollectionItems.IndexModel
+@using ArcaneVault_Web.Models
 
 @{
     ViewData["Title"] = "My Collection";
+    var valuation = Model.Valuation;
 }
 
 <div class="page-header">
-    <h2>My Collection</h2>
-    <a asp-page="Available" class="btn btn-accent">+ Add Items</a>
+    <div>
+        <h2>My Collection</h2>
+        <p class="page-subtitle">Everything you own, graded and valued.</p>
+    </div>
+    <div class="header-actions-group">
+        <a asp-page="/Dashboard/Index" class="btn btn-outline-secondary">Dashboard</a>
+        <a asp-page="Available" class="btn btn-accent">+ Add items</a>
+    </div>
 </div>
 
-<!-- Stats -->
-@if (Model.CollectionItemList != null && Model.CollectionItemList.Count > 0)
+@if (!string.IsNullOrEmpty(Model.StatusMessage))
 {
-    <div class="stats-bar">
-        <div class="stat-card">
-            <div class="stat-number">@Model.CollectionItemList.Count</div>
-            <div class="stat-label">Total Items</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">@Model.CollectionItemList.Sum(x => x.CurrentQuantity)</div>
-            <div class="stat-label">Total Quantity</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">@Model.CollectionItemList.Select(x => x.CategoryName ?? "Other").Distinct().Count()</div>
-            <div class="stat-label">Categories</div>
-        </div>
-    </div>
+    <div class="alert-success" role="status">@Model.StatusMessage</div>
+}
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert-danger" role="alert">@Model.ErrorMessage</div>
 }
 
-<!-- Search Bar -->
-<form method="get" class="mb-4">
-    <div class="input-group">
-        <input asp-for="SearchString"
-               class="form-control"
-               placeholder="Search by item name, category or quantity..." />
-        <button type="submit" class="btn btn-primary">Search</button>
-        <a asp-page="Index" class="btn btn-outline-secondary">Clear</a>
+@if (valuation.DistinctItems > 0)
+{
+    <section class="valuation-panel valuation-panel-compact">
+        <div class="valuation-primary">
+            <div class="valuation-label">Portfolio value</div>
+            <div class="valuation-amount">@valuation.TotalValue.ToString("C")</div>
+            <div class="valuation-sub">
+                @valuation.DistinctItems @(valuation.DistinctItems == 1 ? "item" : "items")
+                &middot; @valuation.TotalUnits @(valuation.TotalUnits == 1 ? "unit" : "units")
+            </div>
+        </div>
+        <div class="valuation-metrics">
+            <div class="valuation-metric">
+                <span class="metric-label">Spent</span>
+                <span class="metric-value">@valuation.TotalSpent.ToString("C")</span>
+            </div>
+            <div class="valuation-metric">
+                <span class="metric-label">@(valuation.IsGain ? "Gain" : "Loss")</span>
+                <span class="metric-value @(valuation.IsGain ? "value-up" : "value-down")">
+                    @(valuation.IsGain ? "+" : "")@valuation.UnrealisedGain.ToString("C")
+                    <span class="metric-percent">
+                        (@(valuation.GainPercent >= 0 ? "+" : "")@valuation.GainPercent.ToString("0.0")%)
+                    </span>
+                </span>
+            </div>
+        </div>
+    </section>
+}
+
+<form method="get" class="filter-panel filter-panel-compact">
+    <div class="filter-row">
+        <div class="filter-field filter-search">
+            <label asp-for="SearchString" class="form-label">Search</label>
+            <input asp-for="SearchString" class="form-control"
+                   placeholder="Name, category or notes&hellip;" />
+        </div>
+        <div class="filter-field">
+            <label asp-for="ConditionFilter" class="form-label">Condition</label>
+            <select asp-for="ConditionFilter" class="form-select">
+                <option value="">Any condition</option>
+                @foreach (var condition in Enum.GetValues<ItemCondition>())
+                {
+                    <option value="@((int)condition)">@condition.ToString()</option>
+                }
+            </select>
+        </div>
+        <div class="filter-field">
+            <label asp-for="Sort" class="form-label">Sort by</label>
+            <select asp-for="Sort" class="form-select">
+                @foreach (var (value, label) in ArcaneVault_Web.Pages.CollectionItems.IndexModel.SortOptions)
+                {
+                    <option value="@value">@label</option>
+                }
+            </select>
+        </div>
+        <div class="filter-field filter-field-actions">
+            <button type="submit" class="btn btn-accent">Apply</button>
+            <a asp-page="Index" class="btn btn-outline-secondary">Clear</a>
+        </div>
     </div>
 </form>
 
-@if (Model.CollectionItemList == null || Model.CollectionItemList.Count == 0)
+@if (Model.CollectionItemList.Count == 0)
 {
-    <div class="alert-info" style="padding: 32px; text-align: center; border-radius: var(--radius-md);">
-        <div style="font-size: 2rem; margin-bottom: 12px;">&#x1F4E6;</div>
-        <strong>Your collection is empty</strong>
-        <p style="color: var(--text-muted); margin-top: 8px; margin-bottom: 16px;">
-            Start adding items from our catalog to build your collection.
+    <div class="empty-state">
+        <div class="empty-icon">&#128230;</div>
+        <strong>Nothing to show</strong>
+        <p>
+            @if (!string.IsNullOrWhiteSpace(Model.SearchString) || Model.ConditionFilter.HasValue)
+            {
+                <span>No items match your filters.</span>
+            }
+            else
+            {
+                <span>Start adding items from the catalogue to build your collection.</span>
+            }
         </p>
-        <a asp-page="Available" class="btn btn-primary">Browse Available Items</a>
+        <a asp-page="Available" class="btn btn-primary">Browse catalogue</a>
     </div>
 }
 else
@@ -56,38 +112,50 @@ else
     <div class="product-grid">
         @foreach (var item in Model.CollectionItemList)
         {
-            var imgSrc = string.IsNullOrWhiteSpace(item.ResolvedImageUrl)
-                ? Url.Content("~/images/product-placeholder.png")
-                : item.ResolvedImageUrl;
+            var imageSrc = item.ResolvedImageUrl
+                ?? Url.Content("~/images/product-placeholder.png");
 
-            <div class="product-card">
-                <img src="@imgSrc" alt="@item.ItemName" />
+            <article class="product-card">
+                <img src="@imageSrc" alt="@item.ItemName" loading="lazy" />
                 <div class="card-body">
                     <div class="title">@item.ItemName</div>
                     <div class="meta">@(item.CategoryName ?? "Not assigned")</div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-                        <span class="price">Qty: @item.CurrentQuantity</span>
-                        <span class="text-muted-small">Started: @item.StartingQuantity</span>
+
+                    <div class="card-meta-row">
+                        <span class="pill pill-muted">@item.DisplayCondition</span>
+                        <span class="text-muted-small">&times;@item.CurrentQuantity</span>
                     </div>
-                    <div style="display: flex; gap: 6px; margin-top: 10px;">
-                        <a asp-page="Details"
-                           asp-route-id="@item.ItemId"
-                           class="btn btn-info btn-sm" style="flex:1; text-align:center; font-size:0.75rem; padding:6px;">
-                            Details
-                        </a>
-                        <a asp-page="Edit"
-                           asp-route-id="@item.ItemId"
-                           class="btn btn-warning btn-sm" style="flex:1; text-align:center; font-size:0.75rem; padding:6px;">
-                            Edit
-                        </a>
-                        <a asp-page="Delete"
-                           asp-route-id="@item.ItemId"
-                           class="btn btn-danger btn-sm" style="flex:1; text-align:center; font-size:0.75rem; padding:6px;">
-                            Remove
-                        </a>
+
+                    <div class="holding-values">
+                        <div class="holding-value-row">
+                            <span class="text-muted-small">Value</span>
+                            <span class="price">@item.TotalValue.ToString("C")</span>
+                        </div>
+                        @if (item.PurchasePrice.HasValue)
+                        {
+                            <div class="holding-value-row">
+                                <span class="text-muted-small">Paid</span>
+                                <span class="text-muted-small">@item.TotalSpent.ToString("C")</span>
+                            </div>
+                            <div class="holding-value-row">
+                                <span class="text-muted-small">Gain</span>
+                                <span class="@(item.Gain >= 0 ? "value-up" : "value-down")">
+                                    @(item.Gain >= 0 ? "+" : "")@item.Gain.ToString("C")
+                                </span>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="card-actions card-actions-stack">
+                        <a asp-page="Details" asp-route-id="@item.ItemId"
+                           class="btn btn-outline-secondary btn-sm">Details</a>
+                        <a asp-page="Edit" asp-route-id="@item.ItemId"
+                           class="btn btn-warning btn-sm">Edit</a>
+                        <a asp-page="Delete" asp-route-id="@item.ItemId"
+                           class="btn btn-danger btn-sm">Remove</a>
                     </div>
                 </div>
-            </div>
+            </article>
         }
     </div>
 }

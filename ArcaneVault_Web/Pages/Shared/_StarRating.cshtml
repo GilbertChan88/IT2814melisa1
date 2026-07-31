@@ -1,0 +1,25 @@
+@model ArcaneVault_Web.Models.StarRatingViewModel
+
+@if (Model.ReviewCount == 0 && Model.ShowEmptyText)
+{
+    <span class="rating rating-empty">No reviews yet</span>
+}
+else if (Model.ReviewCount > 0)
+{
+    <span class="rating" title="@Model.Rating.ToString("0.0") out of 5">
+        <span class="stars" aria-hidden="true">
+            @for (var star = 1; star <= 5; star++)
+            {
+                <span class="star @(star <= Model.FilledStars ? "star-on" : "star-off")">&#9733;</span>
+            }
+        </span>
+        @if (Model.ShowCount)
+        {
+            <span class="rating-value">@Model.Rating.ToString("0.0")</span>
+            <span class="rating-count">(@Model.ReviewCount)</span>
+        }
+        <span class="visually-hidden">
+            Rated @Model.Rating.ToString("0.0") out of 5 from @Model.ReviewCount reviews
+        </span>
+    </span>
+}

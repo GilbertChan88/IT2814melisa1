@@ -1,0 +1,108 @@
+@page
+@model ArcaneVault_Web.Pages.Notifications.IndexModel
+
+@{
+    ViewData["Title"] = "Notifications";
+}
+
+<div class="page-header">
+    <div>
+        <h2>Notifications</h2>
+        <p class="page-subtitle">
+            Restock alerts, listing decisions, order updates and trade activity.
+        </p>
+    </div>
+    @if (Model.UnreadCount > 0)
+    {
+        <form method="post" asp-page-handler="MarkAllRead">
+            <input type="hidden" name="UnreadOnly"
+                   value="@Model.UnreadOnly.ToString().ToLowerInvariant()" />
+            <button type="submit" class="btn btn-outline-secondary">
+                Mark all as read
+            </button>
+        </form>
+    }
+</div>
+
+@if (!string.IsNullOrEmpty(Model.StatusMessage))
+{
+    <div class="alert-success" role="status">@Model.StatusMessage</div>
+}
+
+<div class="tab-bar">
+    <a asp-page="Index" class="tab-link @(Model.UnreadOnly ? "" : "active")">All</a>
+    <a asp-page="Index" asp-route-UnreadOnly="true"
+       class="tab-link @(Model.UnreadOnly ? "active" : "")">
+        Unread
+        @if (Model.UnreadCount > 0)
+        {
+            <span class="tab-badge">@Model.UnreadCount</span>
+        }
+    </a>
+</div>
+
+@if (Model.Items.Count == 0)
+{
+    <div class="empty-state">
+        <div class="empty-icon">&#128276;</div>
+        <strong>@(Model.UnreadOnly ? "Nothing unread" : "No notifications yet")</strong>
+        <p>
+            Save an out-of-stock item to your wishlist and we'll alert you here
+            when it returns.
+        </p>
+        <a asp-page="/CollectionItems/Available" class="btn btn-primary">Browse catalogue</a>
+    </div>
+}
+else
+{
+    <ul class="notification-list">
+        @foreach (var notification in Model.Items)
+        {
+            <li class="notification-row @(notification.IsRead ? "is-read" : "is-unread")">
+                <div class="notification-body">
+                    @if (!notification.IsRead)
+                    {
+                        <span class="unread-dot" aria-label="Unread"></span>
+                    }
+                    <div>
+                        @if (!string.IsNullOrWhiteSpace(notification.LinkUrl))
+                        {
+                            <a href="@notification.LinkUrl" class="notification-message">
+                                @notification.Message
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="notification-message">@notification.Message</span>
+                        }
+                        <div class="text-muted-small">
+                            @notification.CreatedAt.ToLocalTime().ToString("d MMM yyyy, HH:mm")
+                        </div>
+                    </div>
+                </div>
+
+                <div class="notification-actions">
+                    @if (!notification.IsRead)
+                    {
+                        <form method="post" asp-page-handler="MarkRead">
+                            <input type="hidden" name="notificationId"
+                                   value="@notification.NotificationId" />
+                            <input type="hidden" name="UnreadOnly"
+                                   value="@Model.UnreadOnly.ToString().ToLowerInvariant()" />
+                            <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                Mark read
+                            </button>
+                        </form>
+                    }
+                    <form method="post" asp-page-handler="Delete">
+                        <input type="hidden" name="notificationId"
+                               value="@notification.NotificationId" />
+                        <input type="hidden" name="UnreadOnly"
+                               value="@Model.UnreadOnly.ToString().ToLowerInvariant()" />
+                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
+                </div>
+            </li>
+        }
+    </ul>
+}
