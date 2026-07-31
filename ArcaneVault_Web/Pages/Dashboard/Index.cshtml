@@ -1,0 +1,207 @@
+@page
+@model ArcaneVault_Web.Pages.Dashboard.IndexModel
+@using ArcaneVault_Web.Models
+
+@{
+    ViewData["Title"] = "My Dashboard";
+    var valuation = Model.Dashboard.Valuation;
+}
+
+<div class="page-header">
+    <div>
+        <h2>My Dashboard</h2>
+        <p class="page-subtitle">
+            How your collection is doing, @Model.Dashboard.UserName.
+        </p>
+    </div>
+    @if (Model.IsAdmin)
+    {
+        <a asp-page="/Admin/Analytics" class="btn btn-accent">Platform insights</a>
+    }
+</div>
+
+<!-- Portfolio valuation -->
+<section class="valuation-panel">
+    <div class="valuation-primary">
+        <div class="valuation-label">Collection value</div>
+        <div class="valuation-amount">@valuation.TotalValue.ToString("C")</div>
+        <div class="valuation-sub">
+            @valuation.DistinctItems distinct @(valuation.DistinctItems == 1 ? "item" : "items")
+            &middot; @valuation.TotalUnits @(valuation.TotalUnits == 1 ? "unit" : "units")
+        </div>
+    </div>
+
+    <div class="valuation-metrics">
+        <div class="valuation-metric">
+            <span class="metric-label">Total spent</span>
+            <span class="metric-value">@valuation.TotalSpent.ToString("C")</span>
+        </div>
+        <div class="valuation-metric">
+            <span class="metric-label">Unrealised @(valuation.IsGain ? "gain" : "loss")</span>
+            <span class="metric-value @(valuation.IsGain ? "value-up" : "value-down")">
+                @(valuation.IsGain ? "+" : "")@valuation.UnrealisedGain.ToString("C")
+                <span class="metric-percent">
+                    (@(valuation.GainPercent >= 0 ? "+" : "")@valuation.GainPercent.ToString("0.0")%)
+                </span>
+            </span>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(valuation.MostValuableItemName))
+        {
+            <div class="valuation-metric">
+                <span class="metric-label">Most valuable holding</span>
+                <span class="metric-value metric-value-sm">
+                    @valuation.MostValuableItemName
+                    <span class="text-muted-small">
+                        @valuation.MostValuableItemValue.ToString("C")
+                    </span>
+                </span>
+            </div>
+        }
+    </div>
+</section>
+
+<!-- Activity counters -->
+<div class="stats-bar stats-bar-wide">
+    <a asp-page="/Wishlist/Index" class="stat-card stat-card-link">
+        <div class="stat-number">@Model.Dashboard.WishlistCount</div>
+        <div class="stat-label">Wishlist</div>
+        @if (Model.Dashboard.WishlistInStockCount > 0)
+        {
+            <div class="stat-note">@Model.Dashboard.WishlistInStockCount in stock now</div>
+        }
+    </a>
+    <a asp-page="/Orders/Index" class="stat-card stat-card-link">
+        <div class="stat-number">@Model.Dashboard.OrderCount</div>
+        <div class="stat-label">Orders</div>
+        <div class="stat-note">@Model.Dashboard.TotalOrderSpend.ToString("C0") spent</div>
+    </a>
+    <a asp-page="/Trades/Index" class="stat-card stat-card-link">
+        <div class="stat-number">@Model.Dashboard.PendingTradeOffers</div>
+        <div class="stat-label">Trade offers</div>
+        @if (Model.Dashboard.PendingTradeOffers > 0)
+        {
+            <div class="stat-note stat-note-alert">Awaiting your reply</div>
+        }
+    </a>
+    <a asp-page="/SellWithUs/MyListings" class="stat-card stat-card-link">
+        <div class="stat-number">@Model.Dashboard.ListingsSubmitted</div>
+        <div class="stat-label">My listings</div>
+        @if (Model.Dashboard.ListingsPending > 0)
+        {
+            <div class="stat-note">@Model.Dashboard.ListingsPending in review</div>
+        }
+        else if (Model.Dashboard.ListingsApproved > 0)
+        {
+            <div class="stat-note">@Model.Dashboard.ListingsApproved live</div>
+        }
+    </a>
+    <div class="stat-card">
+        <div class="stat-number">@Model.Dashboard.ReviewsWritten</div>
+        <div class="stat-label">Reviews written</div>
+    </div>
+    <a asp-page="/Notifications/Index" class="stat-card stat-card-link">
+        <div class="stat-number">@Model.Dashboard.UnreadNotifications</div>
+        <div class="stat-label">Unread alerts</div>
+    </a>
+</div>
+
+<!-- Charts -->
+<section class="mt-section">
+    <div class="section-heading">
+        <h3>Collection insights</h3>
+    </div>
+
+    <div class="chart-grid">
+        @await Html.PartialAsync("_BarChart", new BarChartViewModel { Title = "Value growth", Subtitle = "Cumulative collection value by month", Points = Model.Dashboard.ValueGrowth, IsCurrency = true, EmptyMessage = "Add items to your collection to see growth over time." })
+
+        @await Html.PartialAsync("_BarChart", new BarChartViewModel { Title = "Condition mix", Subtitle = "Units by grade", Points = Model.Dashboard.ConditionBreakdown, Horizontal = true, EmptyMessage = "No graded items yet." })
+    </div>
+</section>
+
+<!-- Category breakdown -->
+<section class="mt-section">
+    <div class="section-heading">
+        <h3>Where your value sits</h3>
+    </div>
+
+    @if (Model.Dashboard.CategoryBreakdown.Count == 0)
+    {
+        <div class="empty-state empty-state-compact">
+            <strong>Nothing to break down yet</strong>
+            <p>Add items to your collection and this will fill in.</p>
+            <a asp-page="/CollectionItems/Available" class="btn btn-primary">Browse catalogue</a>
+        </div>
+    }
+    else
+    {
+        <div class="table-wrapper">
+            <table class="table-dark-custom">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th class="num">Items</th>
+                        <th class="num">Units</th>
+                        <th class="num">Value</th>
+                        <th>Share of value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var category in Model.Dashboard.CategoryBreakdown)
+                    {
+                        <tr>
+                            <td><span class="category-pill">@category.CategoryName</span></td>
+                            <td class="num">@category.ItemCount</td>
+                            <td class="num">@category.TotalUnits</td>
+                            <td class="num">@category.TotalValue.ToString("C")</td>
+                            <td>
+                                <div class="share-bar">
+                                    <span class="share-fill"
+                                          style="width:@category.ValueSharePercent.ToString(System.Globalization.CultureInfo.InvariantCulture)%"></span>
+                                    <span class="share-text">@category.ValueSharePercent%</span>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+<!-- Recently added -->
+@if (Model.Dashboard.RecentlyAdded.Count > 0)
+{
+    <section class="mt-section mb-section">
+        <div class="section-heading">
+            <h3>Recently added</h3>
+            <a class="view-all" asp-page="/CollectionItems/Index">View collection &rarr;</a>
+        </div>
+
+        <div class="product-grid">
+            @foreach (var item in Model.Dashboard.RecentlyAdded)
+            {
+                var imageSrc = item.ResolvedImageUrl
+                    ?? Url.Content("~/images/product-placeholder.png");
+
+                <article class="product-card">
+                    <img src="@imageSrc" alt="@item.ItemName" loading="lazy" />
+                    <div class="card-body">
+                        <div class="title">@item.ItemName</div>
+                        <div class="meta">@(item.CategoryName ?? "Uncategorised")</div>
+                        <div class="card-meta-row">
+                            <span class="pill pill-muted">@item.ConditionName</span>
+                            <span class="text-muted-small">&times;@item.CurrentQuantity</span>
+                        </div>
+                        @if (item.EstimatedValue.HasValue)
+                        {
+                            <div class="price">@item.EstimatedValue.Value.ToString("C")</div>
+                        }
+                        <div class="text-muted-small">
+                            Added @item.CreatedAt.ToLocalTime().ToString("d MMM yyyy")
+                        </div>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+}

@@ -76,3 +76,48 @@ namespace ArcaneVault_Web.Models
         }
     }
 }
+
+
+namespace ArcaneVault_Web.Models
+{
+    /// <summary>
+    /// Backing model for the _BarChart partial. Bars are sized as a percentage
+    /// of the largest value, so charts stay readable without a JS library.
+    /// </summary>
+    public class BarChartViewModel
+    {
+        public string Title { get; set; } = string.Empty;
+
+        public string? Subtitle { get; set; }
+
+        public List<ChartPoint> Points { get; set; } = new List<ChartPoint>();
+
+        /// <summary>Renders values as currency rather than plain numbers.</summary>
+        public bool IsCurrency { get; set; }
+
+        /// <summary>Draws bars horizontally instead of as vertical columns.</summary>
+        public bool Horizontal { get; set; }
+
+        public string EmptyMessage { get; set; } = "No data yet.";
+
+        public double MaxValue => Points.Count == 0
+            ? 0
+            : Points.Max(p => p.Value);
+
+        /// <summary>
+        /// Bar length as a percentage of the largest value. Guards against a
+        /// divide-by-zero when every value is zero.
+        /// </summary>
+        public double PercentOfMax(ChartPoint point)
+        {
+            var max = MaxValue;
+            return max <= 0 ? 0 : Math.Round(point.Value / max * 100, 2);
+        }
+
+        public string Format(double value) => IsCurrency
+            ? value.ToString("C0")
+            : value.ToString("0.##");
+
+        public bool HasData => Points.Any(p => p.Value > 0);
+    }
+}

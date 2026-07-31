@@ -1,0 +1,55 @@
+@model ArcaneVault_Web.Models.BarChartViewModel
+@using System.Globalization
+
+<div class="chart-card">
+    <div class="chart-header">
+        <h4 class="chart-title">@Model.Title</h4>
+        @if (!string.IsNullOrWhiteSpace(Model.Subtitle))
+        {
+            <span class="chart-subtitle">@Model.Subtitle</span>
+        }
+    </div>
+
+    @if (!Model.HasData)
+    {
+        <div class="chart-empty">@Model.EmptyMessage</div>
+    }
+    else if (Model.Horizontal)
+    {
+        <ul class="chart-hbars">
+            @foreach (var point in Model.Points)
+            {
+                var width = Model.PercentOfMax(point)
+                    .ToString(CultureInfo.InvariantCulture);
+
+                <li class="chart-hbar-row">
+                    <span class="chart-hbar-label" title="@point.Label">@point.Label</span>
+                    <span class="chart-hbar-track">
+                        <span class="chart-hbar-fill" style="width:@width%"></span>
+                    </span>
+                    <span class="chart-hbar-value">@Model.Format(point.Value)</span>
+                </li>
+            }
+        </ul>
+    }
+    else
+    {
+        <div class="chart-columns" role="img"
+             aria-label="@Model.Title bar chart">
+            @foreach (var point in Model.Points)
+            {
+                var height = Model.PercentOfMax(point)
+                    .ToString(CultureInfo.InvariantCulture);
+
+                <div class="chart-column" title="@point.Label: @Model.Format(point.Value)">
+                    <div class="chart-column-track">
+                        <div class="chart-column-fill" style="height:@height%">
+                            <span class="chart-column-value">@Model.Format(point.Value)</span>
+                        </div>
+                    </div>
+                    <div class="chart-column-label">@point.Label</div>
+                </div>
+            }
+        </div>
+    }
+</div>
