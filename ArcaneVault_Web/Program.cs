@@ -4,6 +4,12 @@ namespace ArcaneVault_Web
 {
     public class Program
     {
+        /// <summary>
+        /// Base address of the backend API. Kept in one place so the typed
+        /// clients below cannot drift apart.
+        /// </summary>
+        private const string ApiBaseUrl = "https://localhost:7297/";
+
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
@@ -20,16 +26,17 @@ namespace ArcaneVault_Web
                 options.Cookie.IsEssential = true;
             });
 
-            // CHATGPT added:
-            builder.Services.AddHttpClient<CategoryDAL>(client =>
-            {
-                client.BaseAddress = new Uri("https://localhost:7297/");
-            });
-            // Register CatalogItemApiClient as a typed HTTP client
-            builder.Services.AddHttpClient<CatalogItemApiClient>(client =>
-            {
-                client.BaseAddress = new Uri("https://localhost:7297/");
-            });
+            // Typed HTTP clients for the backend API.
+            AddApiClient<CategoryDAL>(builder);
+            AddApiClient<CatalogItemApiClient>(builder);
+            AddApiClient<WishlistApiClient>(builder);
+            AddApiClient<NotificationApiClient>(builder);
+            AddApiClient<ReviewApiClient>(builder);
+            AddApiClient<SubmissionApiClient>(builder);
+            AddApiClient<CartApiClient>(builder);
+            AddApiClient<OrderApiClient>(builder);
+            AddApiClient<TradeApiClient>(builder);
+            AddApiClient<AnalyticsApiClient>(builder);
 
             var app = builder.Build();
 
@@ -54,6 +61,15 @@ namespace ArcaneVault_Web
                .WithStaticAssets();
 
             app.Run();
+        }
+
+        private static void AddApiClient<TClient>(WebApplicationBuilder builder)
+            where TClient : class
+        {
+            builder.Services.AddHttpClient<TClient>(client =>
+            {
+                client.BaseAddress = new Uri(ApiBaseUrl);
+            });
         }
     }
 }

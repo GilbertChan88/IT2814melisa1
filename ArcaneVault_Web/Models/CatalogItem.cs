@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace ArcaneVault_Web.Models
 {
@@ -7,41 +7,56 @@ namespace ArcaneVault_Web.Models
         public int CatalogItemId { get; set; }
 
         [Required(ErrorMessage = "Item name is required")]
+        [Display(Name = "Item Name")]
         public string ItemName { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Category is required")]
+        [Display(Name = "Category")]
         public string CategoryCode { get; set; } = string.Empty;
 
         public string? CategoryName { get; set; }
 
         public bool IsDeleted { get; set; }
 
-        // Optional image URL for product images
         public string? ImageUrl { get; set; }
 
-        /// <summary>
-        /// Returns the resolved image URL. If ImageUrl is a relative path pointing
-        /// to the API server (e.g. /images/catalog/guid.jpg), prepends the API base URL.
-        /// If it starts with http/https or is a known local sample SVG, returns as-is.
-        /// </summary>
-        public string? ResolvedImageUrl
+        [Display(Name = "Description")]
+        [MaxLength(2000)]
+        public string? Description { get; set; }
+
+        [Range(0, 1000000, ErrorMessage = "Price must be between 0 and 1,000,000")]
+        [Display(Name = "Price")]
+        [DataType(DataType.Currency)]
+        public decimal Price { get; set; }
+
+        [Range(0, int.MaxValue, ErrorMessage = "Stock cannot be negative")]
+        [Display(Name = "Stock Quantity")]
+        public int StockQuantity { get; set; }
+
+        public bool InStock => StockQuantity > 0;
+
+        /// <summary>0 = Pending, 1 = Approved, 2 = Rejected.</summary>
+        public int Status { get; set; }
+
+        public string StatusName => Status switch
         {
-            get
-            {
-                if (string.IsNullOrWhiteSpace(ImageUrl))
-                    return null;
+            0 => "Pending",
+            1 => "Approved",
+            2 => "Rejected",
+            _ => "Unknown"
+        };
 
-                // Already an absolute URL (uploaded images after the fix)
-                if (ImageUrl.StartsWith("http://") || ImageUrl.StartsWith("https://"))
-                    return ImageUrl;
+        public string? SubmittedBy { get; set; }
 
-                // Known sample SVGs exist in both frontend and API wwwroot
-                if (ImageUrl.Contains("sample-"))
-                    return ImageUrl;
+        public int ViewCount { get; set; }
 
-                // Relative path to an uploaded file on the API server
-                return "https://localhost:7297" + ImageUrl;
-            }
-        }
+        public double AverageRating { get; set; }
+
+        public int ReviewCount { get; set; }
+
+        public DateTime CreatedAt { get; set; }
+
+        /// <summary>Browser-fetchable image URL, falling back to the placeholder.</summary>
+        public string? ResolvedImageUrl => ImageUrlResolver.Resolve(ImageUrl);
     }
 }
